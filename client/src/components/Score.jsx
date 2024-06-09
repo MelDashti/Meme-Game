@@ -1,12 +1,14 @@
 import React from 'react';
 import { Card, Container, Row, Col } from 'react-bootstrap';
 
-export default function Score({ correctAnswers, selectedQuote }) {
+export default function Score({score, correctAnswers, selectedQuote }) {
+
+
     return (
         <Container className="d-flex flex-column align-items-center mt-5">
             <Card className="w-100 mb-3" style={{ maxWidth: '800px' }}>
                 <Card.Body className="text-center">
-                    <h2>Your Score</h2>
+                    <h2>Your Score: {score}</h2>
                     <p>You selected: {selectedQuote}</p>
                     <h3>Correct Answers:</h3>
                     <Row>

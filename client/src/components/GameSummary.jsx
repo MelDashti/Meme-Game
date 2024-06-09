@@ -5,7 +5,7 @@ const GameSummary = ({ score, results }) => {
   return (
     <Container className="my-4">
       <Card>
-        <Card.Header>Game Summary</Card.Header>
+        <Card.Header>Total Score - 100</Card.Header>
         <Card.Body>
           <h4>Total Score: {score}</h4>
           <Row>
@@ -21,9 +21,7 @@ const GameSummary = ({ score, results }) => {
               </Col>
             ))}
           </Row>
-          <Button onClick={() => window.location.reload()} className="mt-3">
-            Start New Game
-          </Button>
+
         </Card.Body>
       </Card>
     </Container>
