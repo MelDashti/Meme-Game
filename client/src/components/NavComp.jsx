@@ -1,7 +1,7 @@
 import { Container, Nav, Navbar } from "react-bootstrap";
 import { PersonCircle } from 'react-bootstrap-icons';
 
-function NavComp() {
+function NavComp(props) {
     return (
         <Navbar expand="lg" className="bg-body-tertiary">
             <Container>

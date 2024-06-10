@@ -1,6 +1,7 @@
 import db from './db.mjs';
 import Meme from './meme.mjs';
 import Caption from './caption.mjs';
+import dayjs from 'dayjs';
 
 
 export default function MemeDao(){
@@ -58,12 +59,52 @@ export default function MemeDao(){
         })
     }
 
+// this is for creating a game
+    this.createGame = (userId) =>{
+        return new Promise((resolve,reject)=>{
+            const createdAt = dayjs().format();
+            db.run('INSERT INTO Games (userId, totalScore, createdAt, completed) VALUES (?, 0, ?, 0)', [userId, createdAt], function(err) {
+                if(err){
+                    reject(err);
+                }else{
+                    resolve(this.lastID); // returns the id of the newly created id
+                }
+            });
+        });
+    }
     
+    this.completeGame = (gameId, totalScore) =>{
+        return new Promise((resolve, reject)=>{
+            db.run('UPDATE Games SET totalScore = ?, completed = 1 WHERE id = ?', [totalScore, gameId], function(err){
+                if(err){
+                    reject(err);
+                }else{
+                    resolve();
+                }
+            });
+        });
+    }
+
     
-        
-       
-        
-        
+    // this creates a new round
+    this.createRound = (gameId, memeId, selectedCaptionId, score) =>{
+        return new Promise((resolve, reject)=>{
+            db.run('INSERT INTO Rounds (gameId, memeId, selectedCaptionId, score) VALUES (?, ?, ?, ?)', [gameId, memeId, selectedCaptionId, score], function(err) {
+                if (err) reject(err);
+                else resolve(this.lastID); // Return the ID of the newly created round
+              });
+        });
+    }
+    
+    // get rounds of a game
+    this.getRoundsForGame = (gameId)=>{
+        return new Promise((resolve, reject)=>{
+            db.all('SELECT * FROM Rounds WHERE gameId = ?', [gameId], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+              });
+        });
+    }
         
         
     }

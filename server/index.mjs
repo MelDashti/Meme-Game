@@ -4,6 +4,13 @@ import morgan from 'morgan'; // loggin middleware
 import cors from 'cors'; // cors middleware
 import {Result, check, validationResult} from 'express-validator'; // validation middleware
 import db from './db.mjs';
+// Passport related imports 
+import passport from 'passport';
+import LocalStrategy from 'passport-local';
+import session from 'express-session';
+import userDao from './user-dao.mjs';
+import memeDao from './dao-memes.mjs';
+
 
 // here we intitialize and setup the middlewares
 const app = express();
@@ -12,12 +19,89 @@ app.use(express.json());
 
 // Here we setup and enable Cross-Origin Resource Sharing (CORS) **/
 const corsOption = {
-    origin: 'http://localhost:3000',
+    origin: 'http://localhost:5175',
+    optionsSuccessStatus: 200,
+    credentials: true
 }  
 app.use(cors(corsOption));
 
 
-// Here we add the routes for the game 
+// Here we setup the session
+app.use(session({
+    // This is the secret key that will be used to sign the session ID
+    secret: "randomfhkajlfdhurq24stringw",
+    resave: false,
+    saveUninitialized: false,
+  }));
+
+// Here we initialize the passport with the session
+app.use(passport.authenticate('session'));
+
+// Here we setup passport with local strategy
+// cb is a callback function that is called when the authentication is done
+passport.use(new LocalStrategy(async function verify(username, password, cb){
+    // Here we check if the user exists in the database
+    const user = await userDao.getUser(username,password);
+    // If the user does not exist, we return an error message
+    if(!user)
+        return cb(null, false, {message: 'Incorrect username or password'});
+    return cb(null, user);
+}));
+
+// Here we serialize the user and save it to the session
+passport.serializeUser(function(user, cb){
+    cb(null, user);
+})
+
+// here we deserialize the user and retrieve it from the session
+passport.deserializeUser(function(user,cb){
+    return cb(null, user);
+})
+
+// this is a middleware that checks if the user is logged in 
+const isLoggedIn = (req, res, next) => {
+    if(req.isAuthenticated()) return next();
+    res.status(401).json({message: 'Unauthorized'});
+}
+
+
+// api/sessions. This is the endpoint for the login
+app.post('api/sessions', function(req,res,next){
+    // here we use the previously defined local strategy to authenticate the user
+    passport.authenticate('local', (err, user, info)=>{
+        if(err)
+            return next(err);
+        if(!user){
+            // Here we display the incorrect login message
+            return res.status(401).send(info);
+        }
+        // If it is successful, perform login
+        req.login(user, (err)=>{
+            if(err)
+                return next(err);
+            // If it is successful, send the user to the home page
+            return res.status(201).json(req.user);
+        });
+  })(req, res, next);
+});
+
+// This is the logout
+app.delete('/api/sessions/current', (req, res) => {
+    req.logout(() => {
+      res.end();
+    });
+  });
+
+  // GET /api/sessions/current
+app.get('/api/sessions/current', (req, res) => {
+    if(req.isAuthenticated()) {
+      res.json(req.user);}
+    else
+      res.status(401).json({error: 'Not authenticated'});
+  });
+
+
+// Here we add the routes for game
 
 // Get a random meme with captions. In this we have to return everything that is required by the game
 app.get('/api/meme', async(req, res)=>{
@@ -65,8 +149,60 @@ app.get('/api/best-caption', async (req, res) => {
   });
 
 
+// Endpoint for the game history
+app.post('/api/games', async(req, rest)=>{
+    const{userId} = req.body;
+    try{
+        const game = await memeDao.createGame(userId);
+        res.json({gameId});
+    }catch(err){
+        res.status(500).json({error: 'An error occurred while creating a game.'});
+    }
+})
+
+// Endpoint to complete a game
+app.post('/api/games/:gameId/complete', async(req,res)=>{
+    const{gameId} = req.params;
+    const{totalScore} = req.body;
+    try{
+        await memeDao.completeGame(gameId, totalScore);
+        res.json({message: 'Game completed successfully'});
+    }catch(err){
+        res.status(500).json({error: 'An error occurred while completing a game.'});
+    }
+})
+
+
+// Endpoint to create a new round
+app.post('/api/rounds', async (req, res) => {
+    const { gameId, memeId, selectedCaptionId, score } = req.body;
+    try {
+      const roundId = await gameDao.createRound(gameId, memeId, selectedCaptionId, score);
+      res.json({ roundId });
+    } catch (err) {
+      res.status(500).json({ error: 'An error occurred while creating the round.' });
+    }
+  });
+  
+  // Endpoint to get rounds for a game
+  app.get('/api/games/:gameId/rounds', async (req, res) => {
+    const { gameId } = req.params;
+    try {
+      const rounds = await gameDao.getRoundsForGame(gameId);
+      res.json(rounds);
+    } catch (err) {
+      res.status(500).json({ error: 'An error occurred while fetching rounds for the game.' });
+    }
+  });
+
+
+
+
+
+
 
 // activating the server
-const PORT = 3008;
+const PORT = 3000;
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+
 
