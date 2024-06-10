@@ -1,5 +1,4 @@
 import React, {useState} from "react";
-import MemeRound from "./MemeRound";
 import GameSummary from "./GameSummary";
 import {Link} from "react-router-dom";
 import {Button, Container, Row, Col, Card} from "react-bootstrap";

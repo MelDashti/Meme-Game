@@ -1,10 +1,10 @@
 import React from 'react';
 import {Container} from 'react-bootstrap';
 import {Routes, Route} from 'react-router-dom';
-import Profile from './Components/Profile.jsx';
-import Game from './Components/Game.jsx';
-import NavComp from './Components/NavComp.jsx';
-import NewGame from './Components/NewGame.jsx';
+import Profile from './components/Profile.jsx';
+import Game from './components/Game.jsx';
+import NavComp from './components/NavComp.jsx';
+import NewGame from './components/NewGame.jsx';
 
 
 function App() {
