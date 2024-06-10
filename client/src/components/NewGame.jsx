@@ -1,43 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Container, Row, Col, Alert } from 'react-bootstrap';
 import Score from './Score'; // Import the Score component
+import API from '../API.mjs';
+
+
 
 export default function NewGame() {
-    const quotes = [
-        "When someone explains something to you and you still don't get it.",
-        "When you hear someone say something completely ridiculous.",
-        "When you realize you’ve been doing something wrong your whole life.",
-        "When you see the price of something you thought was on sale.",
-        "When someone says they don’t like pizza.",
-        "When you walk into a room and forget why you went in there.",
-        "When you hear a conspiracy theory that actually makes sense."
-    ];
 
-    const images = [
-        "/images/meme1.jpg",
-        "/images/meme2.jpg",
-        "/images/meme3.jpg",
-        "/images/meme4.jpg",
-        "/images/meme5.jpg",
-        "/images/meme6.jpg",
-        "/images/meme7.jpg",
-        "/images/meme8.jpg",
-        "/images/meme9.jpg"
-    ];
-
-    const correctAnswers = [
-        "When someone explains something to you and you still don't get it.",
-        "When you hear someone say something completely ridiculous."
-    ];
-
-    const [imgUrl, setImgUrl] = useState(images[0]);
+    const [imgUrl, setImgUrl] = useState('');
+    const [quotes, setQuotes] = useState([]);
     const [isLogged, setIsLogged] = useState(true);
     const [round, setRound] = useState(isLogged ? 1 : 3);
+    const [correctAnswers, setCorrectAnswers] = useState([]);
     const [selectedQuote, setSelectedQuote] = useState(null);
     const [timeLeft, setTimeLeft] = useState(30);
     const [showScore, setShowScore] = useState(false);
     const [score, setScore] = useState(0);
     const [message, setMessage] = useState('');
+
+    useEffect(()=>{
+        const fetchMeme = async() =>{
+            try{
+                // fetches a meme url and the quotes
+                const {meme,captions} = await API.getRandomMeme();
+                setImgUrl(meme.url);   
+                setQuotes(captions.map((caption)=>caption.text));
+
+                // Fetch the best caption for the meme
+                const bestCaptionResponse = await API.getBestCaption(meme.id);
+                console.log(bestCaptionResponse);
+                // we get the best caption from the response
+                console.log('hello');
+                console.log(bestCaptionResponse.bestCaption);
+                const bestCaptions = bestCaptionResponse.bestCaption.map(caption => caption.text);
+                setCorrectAnswers(bestCaptions); 
+            } catch(error){
+                console.log(error);
+            }
+        };
+        fetchMeme();
+    }, [round]); // every time the round changes, fetch a new meme
+    
 
     useEffect(() => {
         if (timeLeft > 0) {
@@ -56,7 +59,6 @@ export default function NewGame() {
                 setTimeout(() => {
                     setRound(round + 1);
                     setTimeLeft(30);
-                    setImgUrl(images[round]);
                     setSelectedQuote(null);
                     setMessage('');
                 }, 3000); // Show the message for 3 seconds before moving to the next round
@@ -64,7 +66,7 @@ export default function NewGame() {
                 setShowScore(true);
             }
         }
-    }, [timeLeft, round, images, correctAnswers, selectedQuote, score]);
+    }, [timeLeft, round, correctAnswers, selectedQuote, score]);
 
     const handleSelect = (quote) => {
         setSelectedQuote(quote);

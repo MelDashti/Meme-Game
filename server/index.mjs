@@ -8,9 +8,9 @@ import db from './db.mjs';
 import passport from 'passport';
 import LocalStrategy from 'passport-local';
 import session from 'express-session';
-import userDao from './user-dao.mjs';
-import memeDao from './dao-memes.mjs';
-
+import {getUser} from './user-dao.mjs';
+import MemeDao from './dao-memes.mjs';
+const memeDao = new MemeDao();
 
 // here we intitialize and setup the middlewares
 const app = express();
@@ -41,7 +41,7 @@ app.use(passport.authenticate('session'));
 // cb is a callback function that is called when the authentication is done
 passport.use(new LocalStrategy(async function verify(username, password, cb){
     // Here we check if the user exists in the database
-    const user = await userDao.getUser(username,password);
+    const user = await getUser(username,password);
     // If the user does not exist, we return an error message
     if(!user)
         return cb(null, false, {message: 'Incorrect username or password'});
@@ -103,27 +103,37 @@ app.get('/api/sessions/current', (req, res) => {
 
 // Here we add the routes for game
 
-// Get a random meme with captions. In this we have to return everything that is required by the game
-app.get('/api/meme', async(req, res)=>{
-    try{
-        // Here a random meme is fetched
-        const result = await memeDao.getRandomMeme();
-        // Here best captions of that meme(result) is fetched
-        const bestMatchCaptions = await memeDao.getBestMatchCaptions(result.id);
-        // The id of the best match captions is passed so that 5 random captions that are not these 2 captions are returned
-        const additionalCaptions = await memeDao.getAdditionalCaptions(result.id, bestMatchCaptions.map(c=>c.id));
-        // All the captions are placed in one array 
-        const allCaptions = [...bestMatchCaptions, ...additionalCaptions];
-        // We shuffle the caption array
-        allCaptions.sort(()=> 0.5 - Math.random());
+app.get('/api/meme', async (req, res) => {
+  try {
+      console.log('Fetching a random meme...');
+      const result = await memeDao.getRandomMeme();
+      if (!result) {
+          throw new Error('No meme found');
+      }
+      console.log('Random meme fetched:', result);
 
-        res.json({
-            meme: result,
-            captions: allCaptions
-        });
-    }catch(err){
-        res.status(500).json({error: 'An error occured while fetching the meme'});
-    }
+      console.log('Fetching best match captions for meme id:', result.id);
+      const bestMatchCaptions = await memeDao.getBestMatchCaptions(result.id);
+      if (!bestMatchCaptions.length) {
+          throw new Error('No best match captions found');
+      }
+      console.log('Best match captions fetched:', bestMatchCaptions);
+
+      console.log('Fetching additional captions...');
+      const additionalCaptions = await memeDao.getAdditionalCaptions(result.id, bestMatchCaptions.map(c => c.id));
+      console.log('Additional captions fetched:', additionalCaptions);
+
+      const allCaptions = [...bestMatchCaptions, ...additionalCaptions];
+      allCaptions.sort(() => 0.5 - Math.random());
+
+      res.json({
+          meme: result,
+          captions: allCaptions
+      });
+  } catch (err) {
+      console.error('Error occurred while fetching the meme:', err.message);
+      res.status(500).json({ error: err.message });
+  }
 });
 
 // Endpoint to check the selected caption
@@ -139,9 +149,9 @@ app.post('/api/check-caption', async (req, res) => {
 
 // endpoint to get the best caption
 app.get('/api/best-caption', async (req, res) => {
-    const { memeId } = req.query;
+    const { id } = req.query;
     try {
-      const bestCaption = await memeDao.getBestMatchCaptions(memeId);
+      const bestCaption = await memeDao.getBestMatchCaptions(id);
       res.json({ bestCaption });
     } catch (err) {
       res.status(500).json({ error: 'An error occurred while getting the best caption.' });
