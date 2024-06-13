@@ -2,8 +2,8 @@ const SERVER_URL = 'http://localhost:3000';
 
 // here we define the API functions for getting game related info
 
-const getRandomMeme = async () => {
-    const response = await fetch(SERVER_URL + '/api/meme');
+const getRandomMeme = async (excludeIds=[]) => {
+    const response = await fetch(SERVER_URL + `/api/meme?excludeIds=${excludeIds.join(',')}`);
     if (response.ok) {
         const memeData = await response.json();
         return memeData;
@@ -125,6 +125,17 @@ const getRoundsForGame = async (gameId) => {
     }
 };
 
+const getAllGamesForUser = async (userId) => {
+    const response = await fetch(SERVER_URL + `/api/users/${userId}/games`);
+    if (response.ok) {
+      const games = await response.json();
+      return games;
+    } else {
+      const errDetails = await response.text();
+      throw errDetails;
+    }
+  };
+
 // authentication related
 const login = async(credentials)=>{
     const response = await fetch(SERVER_URL + '/api/sessions',{
@@ -179,5 +190,5 @@ const getUserInfo = async () => {
     createRound,
     getRoundsForGame,
     deleteGame,
-    completeRound,
+    getAllGamesForUser,
 };

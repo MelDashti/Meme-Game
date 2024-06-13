@@ -7,20 +7,24 @@ import dayjs from 'dayjs';
 export default function MemeDao(){
 
     // this function will retrieve a random Meme from the db
-    this.getRandomMeme = () =>{
-        return new Promise((resolve, reject)=>{
-            const query = 'SELECT*FROM MEMES ORDER BY RANDOM() LIMIT 1';
-            db.all(query, (err, rows)=>{
-                if(err){
+    // excludeIds is an array of meme ids that should be excluded from the selection
+    this.getRandomMeme = (excludeIds = []) => {
+        return new Promise((resolve, reject) => {
+            const query = `
+                SELECT * FROM MEMES 
+                WHERE id NOT IN (${excludeIds.map(() => '?').join(',')})
+                ORDER BY RANDOM() LIMIT 1
+            `;
+            db.all(query, excludeIds, (err, rows) => {
+                if (err) {
                     reject(err);
-                }else{
+                } else {
                     const meme = new Meme(rows[0].id, rows[0].url);
                     resolve(meme);
                 }
-            })
-
-        })
-    }
+            });
+        });
+    };
 
     this.getBestMatchCaptions = (memeId) =>{
         return new Promise((resolve, reject) => {
@@ -42,6 +46,40 @@ export default function MemeDao(){
         });
     }
 
+    this.getAllGamesForUser = (userId) =>{
+        return new Promise((resolve, reject)=>{
+            const query = 'SELECT*FROM Games WHERE userId = ? ORDER BY createdAt DESC';
+            db.all(query, [userId], (err, rows)=>{
+                if(err){
+                    reject(err);
+                }else{
+                    resolve(rows);
+                }
+            });
+        });
+    };
+
+    this.getRoundsForGame = (gameId) => {
+        return new Promise((resolve, reject) => {
+            const query = `
+                SELECT r.id, r.gameId, r.memeId, r.selectedCaption, r.score, m.url as memeUrl
+                FROM Rounds r
+                JOIN Memes m ON r.memeId = m.id
+                WHERE r.gameId = ?
+            `;
+            db.all(query, [gameId], (err, rows) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(rows);
+                }
+            });
+        });
+    };
+    
+    
+    
+    
     this.getAdditionalCaptions = (memeId, excludeIds) => {
         return new Promise((resolve, reject) => {
             const query = `
@@ -113,15 +151,15 @@ export default function MemeDao(){
         });
     }
     
-    // get rounds of a game
-    this.getRoundsForGame = (gameId)=>{
-        return new Promise((resolve, reject)=>{
-            db.all('SELECT * FROM Rounds WHERE gameId = ?', [gameId], (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows);
-              });
-        });
-    }
+    // // get rounds of a game
+    // this.getRoundsForGame = (gameId)=>{
+    //     return new Promise((resolve, reject)=>{
+    //         db.all('SELECT * FROM Rounds WHERE gameId = ?', [gameId], (err, rows) => {
+    //             if (err) reject(err);
+    //             else resolve(rows);
+    //           });
+    //     });
+    // }
         
         
     // here we delete a game and it's associated rounds. (this is for when the user doesn't complete a game)

@@ -51,7 +51,7 @@ function App() {
             <NavComp loggedIn={loggedIn} handleLogout={handleLogout} />
             <Container fluid className="flex-grow-1 d-flex flex-column">
                 <Routes>
-                    <Route path="/" element={<Game />} />
+                    <Route path="/" element={<Game userId={user?.id} />} />
                     <Route path='/newgame' element={<NewGame loggedIn={loggedIn} userId={user?.id}/>} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path='/login' element={

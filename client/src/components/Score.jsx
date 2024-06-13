@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Container, Row, Col } from 'react-bootstrap';
 
-export default function Score({score, correctAnswers, selectedQuote }) {
+export default function Score({gameId}) {
 
 
     return (

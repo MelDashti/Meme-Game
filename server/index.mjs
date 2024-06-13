@@ -105,9 +105,11 @@ app.get('/api/sessions/current', (req, res) => {
 // Here we add the routes for game
 
 app.get('/api/meme', async (req, res) => {
+  const {excludeIds} = req.query;
+  const excludeIdsArray = excludeIds ? excludeIds.split(',').map(Number) : [];
   try {
       console.log('Fetching a random meme...');
-      const result = await memeDao.getRandomMeme();
+      const result = await memeDao.getRandomMeme(excludeIdsArray);
       if (!result) {
           throw new Error('No meme found');
       }
@@ -160,6 +162,7 @@ app.get('/api/best-caption', async (req, res) => {
   });
 
 
+  
 // Endpoint for creating a new game
 app.post('/api/games', async(req, res)=>{
     const{userId} = req.body;
@@ -217,17 +220,24 @@ app.post('/api/rounds', async (req, res) => {
   app.get('/api/games/:gameId/rounds', async (req, res) => {
     const { gameId } = req.params;
     try {
-      const rounds = await gameDao.getRoundsForGame(gameId);
-      res.json(rounds);
+        const rounds = await memeDao.getRoundsForGame(gameId);
+        res.json(rounds);
     } catch (err) {
-      res.status(500).json({ error: 'An error occurred while fetching rounds for the game.' });
+        console.error('Error fetching rounds for game:', err.message);
+        res.status(500).json({ error: 'An error occurred while fetching rounds for the game.' });
     }
-  });
+});
 
-
-
-
-
+  // endpoint to get all games for a user
+  app.get('/api/users/:userId/games', async(req, res)=>{
+    const {userId} = req.params;
+    try{
+        const games = await memeDao.getAllGamesForUser(userId);
+        res.json(games);
+    }catch(err){
+        res.status(500).json({error: 'An error occurred while fetching games for the user.'});
+    }
+  })
 
 
 // activating the server
