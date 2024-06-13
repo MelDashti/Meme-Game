@@ -102,9 +102,11 @@ export default function MemeDao(){
 
     
     // this creates a new round
-    this.createRound = (gameId, memeId, selectedCaptionId, score) =>{
+    this.createRound = (gameId, memeId, selectedCaption, score) =>{
         return new Promise((resolve, reject)=>{
-            db.run('INSERT INTO Rounds (gameId, memeId, selectedCaptionId, score) VALUES (?, ?, ?, ?)', [gameId, memeId, selectedCaptionId, score], function(err) {
+            console.log('Creating a new round...');
+            console.log(gameId, memeId, selectedCaption, score);
+            db.run('INSERT INTO Rounds (gameId, memeId, selectedCaption, score) VALUES (?, ?, ?, ?)', [gameId, memeId, selectedCaption, score], function(err) {
                 if (err) reject(err);
                 else resolve(this.lastID); // Return the ID of the newly created round
               });

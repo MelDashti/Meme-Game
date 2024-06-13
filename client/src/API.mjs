@@ -41,6 +41,7 @@ const getBestCaption = async (memeId) => {
     }
 };
 
+// {gameId} is returned by the server
 const createGame = async (userId) => {
     const response = await fetch(SERVER_URL + '/api/games', {
         method: 'POST',
@@ -75,20 +76,24 @@ const completeGame = async (gameId, totalScore) => {
     }
 };
 
-const createRound = async (gameId, memeId, selectedCaptionId, score) => {
-    const response = await fetch(SERVER_URL + '/api/rounds', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ gameId, memeId, selectedCaptionId, score }),
-    });
-    if (response.ok) {
-        const round = await response.json();
-        return round;
-    } else {
-        const errDetails = await response.text();
-        throw errDetails;
+const createRound = async (gameId, memeId, selectedCaption, score) => {
+    try {
+        const response = await fetch(SERVER_URL + '/api/rounds', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ gameId, memeId, selectedCaption, score }),
+        });
+        if (response.ok) {
+            console.log('Round created', await response.json());
+        } else {
+            const errDetails = await response.text();
+            console.log('Round creation failed:', errDetails);
+            throw new Error(errDetails);
+        }
+    } catch (error) {
+        console.error('Error in createRound:', error);
     }
 };
 
@@ -111,6 +116,7 @@ const login = async(credentials)=>{
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(credentials),
+        credentials: 'include'
     });
     if(response.ok){
         const user = await response.json();

@@ -50,5 +50,5 @@
 
 ## Users Credentials
 
-- username, password (plus any other requested info)
-- username, password (plus any other requested info)
+- user1, password (plus any other requested info)
+- user2, abc123 (plus any other requested info)

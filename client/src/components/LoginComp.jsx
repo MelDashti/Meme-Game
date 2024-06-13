@@ -15,10 +15,10 @@ function LoginComp(props) {
   };
 
   return (
-    <Row>
+    <Row className="justify-content-md-center">
       <Col md={6}>
         <Form onSubmit={handleSubmit}>
-          <Form.Group controlId='username' className='mb-3'>
+         <Form.Group controlId='username' className='mb-3'>
               <Form.Label>email</Form.Label>
               <Form.Control type='email' value={username} onChange={ev => setUsername(ev.target.value)} required={true} />
           </Form.Group>
@@ -30,9 +30,9 @@ function LoginComp(props) {
 
           <Button type='submit'>Login</Button>
           <Link className='btn btn-danger mx-2 my-2' to={'/'} >Cancel</Link>
-      </Form>
-    </Col>
-  </Row>
+        </Form>
+      </Col>
+    </Row>
   )
 };
 

@@ -28,8 +28,11 @@ function App() {
             const user = await API.login(credentials);
             setLoggedIn(true);
             setMessage({ msg: `Welcome, ${user.name}!`, type: 'success' });
+            console.log(user);
             setUser(user);
         } catch (error) {
+            console.log("hello");
+            console.log(error);
             setMessage({ msg: error.message, type: 'danger' });
         }
     };
@@ -49,7 +52,7 @@ function App() {
             <Container fluid className="flex-grow-1 d-flex flex-column">
                 <Routes>
                     <Route path="/" element={<Game />} />
-                    <Route path='/newgame' element={<NewGame />} />
+                    <Route path='/newgame' element={<NewGame loggedIn={loggedIn} userId={user?.id}/>} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path='/login' element={
                         loggedIn ? <Navigate replace to='/' /> : <LoginComp login={handleLogin} />

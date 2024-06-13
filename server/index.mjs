@@ -19,7 +19,7 @@ app.use(express.json());
 
 // Here we setup and enable Cross-Origin Resource Sharing (CORS) **/
 const corsOption = {
-    origin: 'http://localhost:5175',
+    origin: 'http://localhost:5173',
     optionsSuccessStatus: 200,
     credentials: true
 }  
@@ -35,7 +35,8 @@ app.use(session({
   }));
 
 // Here we initialize the passport with the session
-app.use(passport.authenticate('session'));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Here we setup passport with local strategy
 // cb is a callback function that is called when the authentication is done
@@ -66,7 +67,7 @@ const isLoggedIn = (req, res, next) => {
 
 
 // api/sessions. This is the endpoint for the login
-app.post('api/sessions', function(req,res,next){
+app.post('/api/sessions', function(req,res,next){
     // here we use the previously defined local strategy to authenticate the user
     passport.authenticate('local', (err, user, info)=>{
         if(err)
@@ -80,7 +81,7 @@ app.post('api/sessions', function(req,res,next){
             if(err)
                 return next(err);
             // If it is successful, send the user to the home page
-            return res.status(201).json(req.user);
+            return res.json(req.user);
         });
   })(req, res, next);
 });
@@ -159,11 +160,13 @@ app.get('/api/best-caption', async (req, res) => {
   });
 
 
-// Endpoint for the game history
-app.post('/api/games', async(req, rest)=>{
+// Endpoint for creating a new game
+app.post('/api/games', async(req, res)=>{
     const{userId} = req.body;
     try{
-        const game = await memeDao.createGame(userId);
+      console.log('Creating a new game...');
+      console.log(userId);
+        const gameId = await memeDao.createGame(userId);
         res.json({gameId});
     }catch(err){
         res.status(500).json({error: 'An error occurred while creating a game.'});
@@ -185,14 +188,18 @@ app.post('/api/games/:gameId/complete', async(req,res)=>{
 
 // Endpoint to create a new round
 app.post('/api/rounds', async (req, res) => {
-    const { gameId, memeId, selectedCaptionId, score } = req.body;
+    const { gameId, memeId, selectedCaption, score } = req.body;
+    console.log('Received data:', { gameId, memeId, selectedCaption, score });
     try {
-      const roundId = await gameDao.createRound(gameId, memeId, selectedCaptionId, score);
-      res.json({ roundId });
+        console.log('Creating a new round...');
+        const roundId = await memeDao.createRound(gameId, memeId, selectedCaption, score);
+        res.json({ roundId });
     } catch (err) {
-      res.status(500).json({ error: 'An error occurred while creating the round.' });
+        console.error('Error creating round:', err.message);
+        res.status(500).json({ error: 'An error occurred while creating the round.' });
     }
-  });
+});
+
   
   // Endpoint to get rounds for a game
   app.get('/api/games/:gameId/rounds', async (req, res) => {
