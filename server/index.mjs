@@ -174,15 +174,27 @@ app.post('/api/games', async(req, res)=>{
 })
 
 // Endpoint to complete a game
-app.post('/api/games/:gameId/complete', async(req,res)=>{
-    const{gameId} = req.params;
+app.post('/api/games/:id/complete', async(req,res)=>{
+    const{id} = req.params;
     const{totalScore} = req.body;
     try{
-        await memeDao.completeGame(gameId, totalScore);
+        await memeDao.completeGame(id, totalScore);
         res.json({message: 'Game completed successfully'});
     }catch(err){
         res.status(500).json({error: 'An error occurred while completing a game.'});
     }
+})
+
+
+// Endpoint for deleting a game with all its rounds
+app.delete('/api/games/:gameId', async(req, res)=>{
+  const{gameId} = req.params;
+  try{
+    await memeDao.deleteGameAndRounds(gameId);
+    res.json({message: 'Game and all its rounds deleted successfully'});
+  }catch(err){
+    res.status(500).json({error: 'An error occurred while deleting a game.'});
+  }
 })
 
 

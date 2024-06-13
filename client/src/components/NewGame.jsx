@@ -6,32 +6,37 @@ import API from '../API.mjs';
 export default function NewGame({ loggedIn, userId }) {
     const [imgUrl, setImgUrl] = useState('');
     const [quotes, setQuotes] = useState([]);
-    const [round, setRound] = useState(loggedIn ? 1 : 3);
+    const [currentRound, setCurrentRound] = useState();
+    const [totalRound, setTotalRound] = useState(loggedIn ? 3 : 1);
     const [correctAnswers, setCorrectAnswers] = useState([]);
     const [selectedQuote, setSelectedQuote] = useState(null);
     const [timeLeft, setTimeLeft] = useState(30);
     const [showScore, setShowScore] = useState(false);
     const [score, setScore] = useState(0);
+    const [totalScore, setTotalScore] = useState(0);
     const [message, setMessage] = useState('');
-    const [gameId, setGameId] = useState();
-    const [memeId, setMemeId] = useState();
+    const [gameId, setGameId] = useState(null);
+    const [memeId, setMemeId] = useState(null);
 
+    
     useEffect(() => {
         const createNewGame = async () => {
             if (loggedIn) {
                 try {
-                    console.log(userId);
                     const game = await API.createGame(userId);
-                    console.log(game.gameId);
                     setGameId(game.gameId);
+                    if (game.gameId) {
+                        setCurrentRound(1);
+                    }
                 } catch (error) {
                     console.log(error);
                 }
             }
         };
         createNewGame();
-    }, [loggedIn, userId]);
+    }, []); 
 
+    
     useEffect(() => {
         const fetchMeme = async () => {
             try {
@@ -48,57 +53,66 @@ export default function NewGame({ loggedIn, userId }) {
                 console.log(error);
             }
         };
-        fetchMeme();
-    }, [round]); // every time the round changes, fetch a new meme
+    
+        const createRound = async () => {
+            try {
+                console.log(gameId, memeId, selectedQuote, totalScore);
+                await API.createRound(gameId, memeId, selectedQuote, totalScore);
+            } catch (error) {
+                console.log(error);
+            }
+        };
+    
+        if(gameId && memeId){
+            fetchMeme().then(createRound);
+        }
+    }, [currentRound]); // every time the round changes, fetch a new meme
 
     useEffect(() => {
         if (timeLeft > 0) {
             const timerId = setInterval(() => {
                 setTimeLeft((prevTime) => prevTime - 1);
-            }, 1000);
-            return () => clearInterval(timerId);
+            }, 1000); // 1 second interval. 
+            return () => clearInterval(timerId); // clean up the interval when the component unmounts
         }
     }, [timeLeft]);
 
-    const saveRound = useCallback(async () => {
-        try {
-            console.log(gameId, memeId, selectedQuote, score);
-            await API.createRound(gameId, memeId, selectedQuote, score);
-        } catch (error) {
-            console.log(error);
-        }
-    }, [gameId, memeId, selectedQuote, score]);
-
-    const completeGame = useCallback(async () => {
-        try {
-            await API.completeGame(gameId, score);
+    const completeGame = async () => {
+         try {
+            await API.completeGame(gameId, totalScore);
             setShowScore(true);
         } catch (error) {
             console.log(error);
         }
-    }, [gameId, score]);
+    };
 
-    useEffect(() => {
+
+    // here we check if the time is up and if the answer is correct. 
+    useEffect(() => { // handling timer expiry.
         if (timeLeft === 0) {
-            if (round < 3) {
+            if (currentRound <= totalRound) {
                 if (correctAnswers.includes(selectedQuote)) {
-                    setScore((prevScore) => prevScore + 5);
-                    setMessage(`Round ${round} finished! 5 points added to your score.`);
+                    setTotalScore((prevScore) => prevScore + 5);
+                    setScore(5);
+                    setMessage(`Round ${currentRound} finished! 5 points added to your score.`);
                 } else {
-                    setMessage(`Round ${round} finished! Incorrect answer. The correct answers were: ${correctAnswers.join(' and ')}`);
+                    setMessage(`Round ${currentRound} finished! Incorrect answer. The correct answers were: ${correctAnswers.join(' and ')}`);
+                    setScore(0);
                 }
-                saveRound();
-                setTimeout(() => {
-                    setRound((prevRound) => prevRound + 1);
+                // setTimeout used to introduce delay before starting the next round.
+                setTimeout(() => { // so that user can see the message before the next round starts.
+                    // here we create a new round, and reset the time left to 30.
+                    setCurrentRound((prevRound) => prevRound + 1);
+                    setScore(0);
                     setTimeLeft(30);
                     setSelectedQuote(null);
                     setMessage('');
-                }, 3000); // Show the message for 3 seconds before moving to the next round
+                }, 4000); // Show the message for 4 seconds before moving to the next round
             } else {
-                completeGame();
+                completeGame(); // if all the rounds are finished we complete the game and set the score.
             }
         }
-    }, [timeLeft, round, correctAnswers, selectedQuote, saveRound, completeGame]);
+    }, [timeLeft, correctAnswers, selectedQuote, currentRound, totalRound]);
 
     const handleSelect = (quote) => {
         setSelectedQuote(quote);
@@ -107,7 +121,7 @@ export default function NewGame({ loggedIn, userId }) {
     return (
         <Container className="d-flex flex-column align-items-center mt-5">
             {showScore ? (
-                <Score score={score} correctAnswers={correctAnswers} selectedQuote={selectedQuote} />
+                <Score score={totalScore} correctAnswers={correctAnswers} selectedQuote={selectedQuote} />
             ) : (
                 <Card className="w-100 mb-3" style={{ maxWidth: '800px', position: 'relative' }}>
                     <div style={{
@@ -119,7 +133,7 @@ export default function NewGame({ loggedIn, userId }) {
                         padding: '5px 10px',
                         borderRadius: '5px'
                     }}>
-                        Round {round}
+                        Round {currentRound}
                     </div>
                     <div style={{
                         position: 'absolute',

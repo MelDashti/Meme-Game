@@ -88,9 +88,9 @@ export default function MemeDao(){
         });
     }
     
-    this.completeGame = (gameId, totalScore) =>{
+    this.completeGame = (id, totalScore) =>{
         return new Promise((resolve, reject)=>{
-            db.run('UPDATE Games SET totalScore = ?, completed = 1 WHERE id = ?', [totalScore, gameId], function(err){
+            db.run('UPDATE Games SET totalScore = ?, completed = 1 WHERE id = ?', [totalScore, id], function(err){
                 if(err){
                     reject(err);
                 }else{
@@ -124,6 +124,27 @@ export default function MemeDao(){
     }
         
         
+    // here we delete a game and it's associated rounds. (this is for when the user doesn't complete a game)
+    this.deleteGameAndRounds = (gameId)=>{
+        return new Promise((resolve, reject)=>{
+            db.run('DELETE FROM ROUNDS WHERE gameId = ?', [gameId], (err)=>{
+                if(err){
+                    reject(err);
+                }else{
+                    db.run('DELETE FROM Games WHERE id = ?', [gameId], (err)=>{
+                        if(err){
+                            reject(err);
+                        }else{
+                            resolve();
+                        }
+                    })
+                }
+            })
+        })
+    }
+    
+    
+    
     }
 
 

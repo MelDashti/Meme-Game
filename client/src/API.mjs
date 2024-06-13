@@ -59,8 +59,9 @@ const createGame = async (userId) => {
     }
 };
 
-const completeGame = async (gameId, totalScore) => {
-    const response = await fetch(SERVER_URL + `/api/games/${gameId}/complete`, {
+
+const completeGame = async (id, totalScore) => {
+    const response = await fetch(SERVER_URL + `/api/games/${id}/complete`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -75,6 +76,22 @@ const completeGame = async (gameId, totalScore) => {
         throw errDetails;
     }
 };
+
+// delete game and its rounds
+const deleteGame = async (gameId) => {
+    const response = await fetch(SERVER_URL + `/api/games/${gameId}`, {
+        method: 'DELETE',
+    });
+    if (response.ok) {
+        const result = await response.json();
+        return result;
+    } else {
+        const errDetails = await response.text();
+        throw errDetails;
+    }
+};
+
+
 
 const createRound = async (gameId, memeId, selectedCaption, score) => {
     try {
@@ -138,6 +155,8 @@ const getUserInfo = async () => {
       throw user;  // an object with the error coming from the server
     }
   };
+
+
   
   const logOut = async() => {
     const response = await fetch(SERVER_URL + '/api/sessions/current', {
@@ -159,4 +178,6 @@ const getUserInfo = async () => {
     completeGame,
     createRound,
     getRoundsForGame,
+    deleteGame,
+    completeRound,
 };
