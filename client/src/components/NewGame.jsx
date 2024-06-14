@@ -1,15 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, Button, Container, Row, Col, Alert } from 'react-bootstrap';
 import Score from './Score'; // Import the Score component
 import API from '../API.mjs';
 
 export default function NewGame({ loggedIn, userId }) {
-
-    // we use this to keep track of memes so that they are unique
     const [usedMemes, setUsedMemes] = useState([]);
     const [imgUrl, setImgUrl] = useState('');
     const [quotes, setQuotes] = useState([]);
-    const [currentRound, setCurrentRound] = useState();
+    const [currentRound, setCurrentRound] = useState(0);
     const [totalRound, setTotalRound] = useState(loggedIn ? 3 : 1);
     const [correctAnswers, setCorrectAnswers] = useState([]);
     const [selectedQuote, setSelectedQuote] = useState(null);
@@ -20,53 +18,82 @@ export default function NewGame({ loggedIn, userId }) {
     const [gameId, setGameId] = useState(null);
     const [memeId, setMemeId] = useState(null);
 
-    
-    useEffect(() => {
-        const createNewGame = async () => {
-            if (loggedIn) {
-                try {
-                    const game = await API.createGame(userId);
-                    setGameId(game.gameId);
-                    if (game.gameId) {
-                        setCurrentRound(1);
-                    }
-                } catch (error) {
-                    console.log(error);
-                }
-            }
-        };
-        createNewGame();
-    }, []); 
+    const gameCreated = useRef(false); // Track if game is created
+    const roundCreated = useRef(false); // Track if round is created
 
-    
     useEffect(() => {
-        const fetchMeme = async () => {
-            try {
-                // fetches a meme url and the quotes
-                const { meme, captions } = await API.getRandomMeme(usedMemes);
-                setImgUrl(meme.url);
-                setQuotes(captions.map((caption) => caption.text));
-                setMemeId(meme.id);
-                setUsedMemes((prevUsedMemes)=>[...prevUsedMemes, meme.id]);
-                // Fetch the best caption for the meme
-                const bestCaptionResponse = await API.getBestCaption(meme.id);
-                const bestCaptions = bestCaptionResponse.bestCaption.map((caption) => caption.text);
-                setCorrectAnswers(bestCaptions);
-            } catch (error) {
-                console.log(error);
+        if (loggedIn && !gameCreated.current) {
+            gameCreated.current = true;
+            createNewGame();
+        }
+    }, [loggedIn]);
+
+    const createNewGame = async () => {
+        try {
+            const game = await API.createGame(userId);
+            setGameId(game.gameId);
+            if (game.gameId) {
+                startNewRound();
             }
-        };
-        fetchMeme();
-    }, [currentRound]); // every time the round changes, fetch a new meme
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const startNewRound = async () => {
+        setCurrentRound((prevRound) => prevRound + 1);
+        setTimeLeft(6);
+        setSelectedQuote(null);
+        setMessage('');
+        roundCreated.current = false;
+
+        try {
+            const { meme, captions } = await API.getRandomMeme(usedMemes);
+            setImgUrl(meme.url);
+            setQuotes(captions.map((caption) => caption.text));
+            setMemeId(meme.id);
+            setUsedMemes((prevUsedMemes) => [...prevUsedMemes, meme.id]);
+
+            const bestCaptionResponse = await API.getBestCaption(meme.id);
+            const bestCaptions = bestCaptionResponse.bestCaption.map((caption) => caption.text);
+            setCorrectAnswers(bestCaptions);
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
     useEffect(() => {
         if (timeLeft > 0) {
             const timerId = setInterval(() => {
                 setTimeLeft((prevTime) => prevTime - 1);
-            }, 1000); // 1 second interval. 
-            return () => clearInterval(timerId); // clean up the interval when the component unmounts
+            }, 1000);
+            return () => clearInterval(timerId);
+        } else if (timeLeft === 0 && !roundCreated.current) {
+            roundCreated.current = true;
+            handleRoundEnd();
         }
     }, [timeLeft]);
+
+    const handleRoundEnd = () => {
+        let roundScore = 0;
+        if (correctAnswers.includes(selectedQuote)) {
+            setTotalScore((prevScore) => prevScore + 5);
+            roundScore = 5;
+            setMessage(`Round ${currentRound} finished! 5 points added to your score.`);
+        } else {
+            setMessage(`Round ${currentRound} finished! Incorrect answer. The correct answers were: ${correctAnswers.join(' and ')}`);
+        }
+
+        createRound(roundScore);
+
+        setTimeout(() => {
+            if (currentRound < totalRound) {
+                startNewRound();
+            } else {
+                completeGame();
+            }
+        }, 4000);
+    };
 
     const completeGame = async () => {
         try {
@@ -84,39 +111,6 @@ export default function NewGame({ loggedIn, userId }) {
             console.log(error);
         }
     };
-    
-
-
-
-    // here we check if the time is up and if the answer is correct. 
-    useEffect(() => { // handling timer expiry.
-        if (timeLeft === 0) {
-            let roundScore = 0;
-            if (currentRound <= totalRound) {
-                if (correctAnswers.includes(selectedQuote)) {
-                    setTotalScore((prevScore) => prevScore + 5);
-                    roundScore = 5;
-                    setMessage(`Round ${currentRound} finished! 5 points added to your score.`);
-                } else {
-                    setMessage(`Round ${currentRound} finished! Incorrect answer. The correct answers were: ${correctAnswers.join(' and ')}`);
-                }
-                // setTimeout used to introduce delay before starting the next round.
-                setTimeout(() => { // so that user can see the message before the next round starts.
-                    createRound(roundScore);
-                    if (currentRound < totalRound) {
-                        setCurrentRound((prevRound) => prevRound + 1);
-                        setTimeLeft(6);
-                        setSelectedQuote(null);
-                        setMessage('');
-                    } else {
-                        completeGame(); // if all the rounds are finished we complete the game and set the score.
-                    }
-                }, 4000); // Show the message for 4 seconds before moving to the next round
-            }
-        }
-    }, [timeLeft, correctAnswers, selectedQuote, currentRound, totalRound]);
-
-    
 
     const handleSelect = (quote) => {
         setSelectedQuote(quote);
@@ -125,7 +119,7 @@ export default function NewGame({ loggedIn, userId }) {
     return (
         <Container className="d-flex flex-column align-items-center mt-5">
             {showScore ? (
-                <Score score={totalScore} correctAnswers={correctAnswers} selectedQuote={selectedQuote} />
+                <Score gameId={gameId} />
             ) : (
                 <Card className="w-100 mb-3" style={{ maxWidth: '800px', position: 'relative' }}>
                     <div style={{
