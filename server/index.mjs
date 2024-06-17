@@ -169,7 +169,7 @@ app.post('/api/games', async(req, res)=>{
     try{
       console.log('Creating a new game...');
       console.log(userId);
-        const gameId = await memeDao.createGame(userId);
+        const gameId = await memeDao.createGame(userId|| null); // we pass null if the user is not logged in (for anonymouse user)
         res.json({gameId});
     }catch(err){
         res.status(500).json({error: 'An error occurred while creating a game.'});

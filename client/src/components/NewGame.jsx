@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, Button, Container, Row, Col, Alert } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import Score from './Score'; // Import the Score component
 import API from '../API.mjs';
 
@@ -17,12 +18,15 @@ export default function NewGame({ loggedIn, userId }) {
     const [message, setMessage] = useState('');
     const [gameId, setGameId] = useState(null);
     const [memeId, setMemeId] = useState(null);
+    const [gameFinished, setGameFinished] = useState(false);
 
     const gameCreated = useRef(false); // Track if game is created
     const roundCreated = useRef(false); // Track if round is created
 
+    const navigate = useNavigate(); // Initialize useNavigate
+
     useEffect(() => {
-        if (loggedIn && !gameCreated.current) {
+        if (!gameCreated.current) {
             gameCreated.current = true;
             createNewGame();
         }
@@ -30,7 +34,7 @@ export default function NewGame({ loggedIn, userId }) {
 
     const createNewGame = async () => {
         try {
-            const game = await API.createGame(userId);
+            const game = await API.createGame(userId||null);
             setGameId(game.gameId);
             if (game.gameId) {
                 startNewRound();
@@ -91,6 +95,7 @@ export default function NewGame({ loggedIn, userId }) {
                 startNewRound();
             } else {
                 completeGame();
+                setGameFinished(true);
             }
         }, 4000);
     };
@@ -114,6 +119,18 @@ export default function NewGame({ loggedIn, userId }) {
 
     const handleSelect = (quote) => {
         setSelectedQuote(quote);
+    };
+
+    const handleExitGame = async () => {
+        try{
+            if(!loggedIn || !gameFinished){
+                console.log("deleting game");
+                await API.deleteGame(gameId);
+            }
+        navigate('/'); // Navigate to the home page 
+        } catch (error) {
+            console.log(error);
+        }
     };
 
     return (
@@ -168,6 +185,9 @@ export default function NewGame({ loggedIn, userId }) {
                     </Card.Body>
                 </Card>
             )}
+            <Button variant="danger" onClick={handleExitGame} className="mt-3">
+                Exit Game
+            </Button>
         </Container>
     );
 }

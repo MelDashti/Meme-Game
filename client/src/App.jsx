@@ -11,31 +11,18 @@ import API from './API.mjs';
 function App() {
     const [loggedIn, setLoggedIn] = useState(false);
     const [user, setUser] = useState(null);
-    const [message, setMessage] = useState('');
 
+    
     useEffect(() => {
         const checkAuth = async () => {
-            const user = await API.getUserInfo(); // we have the user info here
+          try {
+            const user = await API.getUserInfo();
             setLoggedIn(true);
             setUser(user);
+          } catch (err) {}
         };
         checkAuth();
-    }, []);
-
-    // here we handle the login 
-    const handleLogin = async (credentials) => {
-        try {
-            const user = await API.login(credentials);
-            setLoggedIn(true);
-            setMessage({ msg: `Welcome, ${user.name}!`, type: 'success' });
-            console.log(user);
-            setUser(user);
-        } catch (error) {
-            console.log("hello");
-            console.log(error);
-            setMessage({ msg: error.message, type: 'danger' });
-        }
-    };
+      }, []);
 
     // this will handle the logout
     const handleLogout = async () => {
@@ -43,8 +30,13 @@ function App() {
         await API.logOut();
         // here we set the logged in state to false
         setLoggedIn(false);
-        setMessage('');
+        setUser(null);
     };
+
+    const loggedInSuccess = (user) => {
+        setLoggedIn(true);
+        setUser(user);
+    }
 
     return (
         <div className="min-vh-100 d-flex flex-column">
@@ -55,7 +47,7 @@ function App() {
                     <Route path='/newgame' element={<NewGame loggedIn={loggedIn} userId={user?.id}/>} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path='/login' element={
-                        loggedIn ? <Navigate replace to='/' /> : <LoginComp login={handleLogin} />
+                        <LoginComp loggedInSuccess={loggedInSuccess} />
                     } />
                 </Routes>
             </Container>

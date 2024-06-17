@@ -1,25 +1,47 @@
 import { useState } from 'react';
-import { Form, Button, Row, Col } from 'react-bootstrap';
+import { Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
+import API from '../API.mjs';
+import { useNavigate } from 'react-router-dom';
 
 function LoginComp(props) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  
+  const [errorMessage, setErrorMessage] = useState('');
+  const navigate = useNavigate();
+
+  const handleLogin = (credentials) => {
+    API.login(credentials)
+      .then(user => {
+        props.loggedInSuccess(user);
+        setErrorMessage("");
+        // redirect to home
+        navigate("/");
+      })
+      .catch(error => {
+        setErrorMessage(error.message);
+      });
+  };
+
   const handleSubmit = (event) => {
-      event.preventDefault();
-      
-      const credentials = { username, password };
-      
-      props.login(credentials);
+    event.preventDefault();
+    setErrorMessage('');
+
+    if (!username || !password) {
+        setErrorMessage('Username and password are required.');
+        return;
+    }
+
+    const credentials = { username, password };
+    handleLogin(credentials);
   };
 
   return (
     <Row className="justify-content-md-center">
       <Col md={6}>
         <Form onSubmit={handleSubmit}>
-         <Form.Group controlId='username' className='mb-3'>
-              <Form.Label>email</Form.Label>
+          <Form.Group controlId='username' className='mb-3'>
+              <Form.Label>Email</Form.Label>
               <Form.Control type='email' value={username} onChange={ev => setUsername(ev.target.value)} required={true} />
           </Form.Group>
 
@@ -30,6 +52,12 @@ function LoginComp(props) {
 
           <Button type='submit'>Login</Button>
           <Link className='btn btn-danger mx-2 my-2' to={'/'} >Cancel</Link>
+          
+          {errorMessage ? (
+            <Alert variant='danger' dismissible onClose={() => setErrorMessage('')}>
+              {errorMessage}
+            </Alert>
+          ) : null}
         </Form>
       </Col>
     </Row>
