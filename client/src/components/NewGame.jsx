@@ -54,7 +54,8 @@ export default function NewGame({ loggedIn, userId }) {
         try {
             const { meme, captions } = await API.getRandomMeme(usedMemes);
             setImgUrl(meme.url);
-            setQuotes(captions.map((caption) => caption.text));
+            const uniqueCaptions = Array.from(new Set(captions.map(caption => caption.text))); // Ensure unique captions
+            setQuotes(uniqueCaptions);
             setMemeId(meme.id);
             setUsedMemes((prevUsedMemes) => [...prevUsedMemes, meme.id]);
 
@@ -89,7 +90,7 @@ export default function NewGame({ loggedIn, userId }) {
         }
 
         createRound(roundScore);
-
+        setSelectedQuote(null);
         setTimeout(() => {
             if (currentRound < totalRound) {
                 startNewRound();
@@ -185,7 +186,7 @@ export default function NewGame({ loggedIn, userId }) {
                     </Card.Body>
                 </Card>
             )}
-            <Button variant="danger" onClick={handleExitGame} className="mt-3">
+            <Button variant="danger" onClick={handleExitGame} className="mt-3 mb-5">
                 Exit Game
             </Button>
         </Container>

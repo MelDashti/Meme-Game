@@ -108,25 +108,18 @@ app.get('/api/meme', async (req, res) => {
   const {excludeIds} = req.query;
   const excludeIdsArray = excludeIds ? excludeIds.split(',').map(Number) : [];
   try {
-      console.log('Fetching a random meme...');
       const result = await memeDao.getRandomMeme(excludeIdsArray);
       if (!result) {
           throw new Error('No meme found');
       }
-      console.log('Random meme fetched:', result);
-
-      console.log('Fetching best match captions for meme id:', result.id);
       const bestMatchCaptions = await memeDao.getBestMatchCaptions(result.id);
       if (!bestMatchCaptions.length) {
           throw new Error('No best match captions found');
       }
-      console.log('Best match captions fetched:', bestMatchCaptions);
 
-      console.log('Fetching additional captions...');
       const additionalCaptions = await memeDao.getAdditionalCaptions(result.id, bestMatchCaptions.map(c => c.id));
-      console.log('Additional captions fetched:', additionalCaptions);
 
-      const allCaptions = [...bestMatchCaptions, ...additionalCaptions];
+      const allCaptions = [...new Set([...bestMatchCaptions, ...additionalCaptions])]; // Remove duplicates
       allCaptions.sort(() => 0.5 - Math.random());
 
       res.json({

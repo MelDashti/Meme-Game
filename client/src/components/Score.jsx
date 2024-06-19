@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Container, Row, Col } from 'react-bootstrap';
+import { Card, Container, Row, Col, Alert } from 'react-bootstrap';
 import API from '../API'; // Adjust the import path as necessary
 
 export default function Score({ gameId }) {
@@ -29,16 +29,16 @@ export default function Score({ gameId }) {
         <Container className="d-flex flex-column align-items-center mt-5">
             <Card className="w-100 mb-3" style={{ maxWidth: '800px' }}>
                 <Card.Body className="text-center">
-                    <h2>Your Total Score: {score}</h2>
-                    <h3>Game Summary:</h3>
-                    <Row>
+                <h2>Your Total Score: {score}</h2>
+                    <Row className="g-4">
                         {summary.map((round, index) => (
-                            <Col xs={12} md={6} className="mb-2" key={index}>
+                            <Col xs={12} md={6} key={index}>
                                 <Card>
+                                    <Card.Img variant="top" src={round.memeUrl} alt="Meme" style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
                                     <Card.Body>
-                                        <p>Meme: <img src={round.memeUrl} alt="Meme" style={{ maxWidth: '100%' }} /></p>
-                                        <p>Selected Caption: {round.selectedCaption}</p>
-                                        <p>Score: {round.score}</p>
+                                        <Card.Title>Selected Caption</Card.Title>
+                                        <Card.Text>{round.selectedCaption}</Card.Text>
+                                        <Card.Text><strong>Score:</strong> {round.score}</Card.Text>
                                     </Card.Body>
                                 </Card>
                             </Col>
