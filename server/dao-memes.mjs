@@ -163,23 +163,28 @@ export default function MemeDao(){
         
         
     // here we delete a game and it's associated rounds. (this is for when the user doesn't complete a game)
-    this.deleteGameAndRounds = (gameId)=>{
-        return new Promise((resolve, reject)=>{
-            db.run('DELETE FROM ROUNDS WHERE gameId = ?', [gameId], (err)=>{
-                if(err){
+    this.deleteGameAndRounds = (gameId) => {
+        return new Promise((resolve, reject) => {
+            console.log(`Attempting to delete rounds for gameId: ${gameId}`); // Debugging line
+            db.run('DELETE FROM ROUNDS WHERE gameId = ?', [gameId], (err) => {
+                if (err) {
+                    console.error(`Error deleting rounds for gameId: ${gameId}`, err); // Debugging line
                     reject(err);
-                }else{
-                    db.run('DELETE FROM Games WHERE id = ?', [gameId], (err)=>{
-                        if(err){
+                } else {
+                    console.log(`Rounds deleted for gameId: ${gameId}`); // Debugging line
+                    db.run('DELETE FROM Games WHERE id = ?', [gameId], (err) => {
+                        if (err) {
+                            console.error(`Error deleting game with id: ${gameId}`, err); // Debugging line
                             reject(err);
-                        }else{
+                        } else {
+                            console.log(`Game deleted with id: ${gameId}`); // Debugging line
                             resolve();
                         }
-                    })
+                    });
                 }
-            })
-        })
-    }
+            });
+        });
+    };
     
     
     

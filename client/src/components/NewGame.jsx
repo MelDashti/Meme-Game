@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, Button, Container, Row, Col, Alert, Modal } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import React, {useEffect, useRef, useState} from 'react';
+import {Alert, Button, Card, Col, Container, Modal, Row} from 'react-bootstrap';
+import {useNavigate} from 'react-router-dom'; // Import useNavigate
 import Score from './Score'; // Import the Score component
 import API from '../API.mjs';
 
-export default function NewGame({ loggedIn, userId }) {
+export default function NewGame({loggedIn, userId}) {
+
     const [usedMemes, setUsedMemes] = useState([]);
     const [imgUrl, setImgUrl] = useState('');
     const [quotes, setQuotes] = useState([]);
@@ -55,7 +56,7 @@ export default function NewGame({ loggedIn, userId }) {
         roundCreated.current = false;
 
         try {
-            const { meme, captions } = await API.getRandomMeme(usedMemes);
+            const {meme, captions} = await API.getRandomMeme(usedMemes);
             setImgUrl(meme.url);
             setQuotes(captions.map(caption => caption.text)); // Directly set captions
             setMemeId(meme.id);
@@ -65,7 +66,6 @@ export default function NewGame({ loggedIn, userId }) {
         }
     };
 
-    
     useEffect(() => {
         if (timeLeft > 0) {
             const timerId = setInterval(() => {
@@ -75,14 +75,12 @@ export default function NewGame({ loggedIn, userId }) {
             return () => clearInterval(timerId);
         } else if (timeLeft === 0 && !roundCreated.current) {
             roundCreated.current = true;
-            clearInterval(timerId);
             handleRoundEnd(selectedQuote); // Pass selectedQuote to handleRoundEnd
         }
     }, [timeLeft]);
 
     const handleRoundEnd = async (selectedQuote) => {
         let roundScore = 0;
-
         try {
             const bestCaptionResponse = await API.getBestCaption(memeId);
             const bestCaptions = bestCaptionResponse.bestCaption.map((caption) => caption.text);
@@ -95,8 +93,7 @@ export default function NewGame({ loggedIn, userId }) {
                 setMessage(`Round ${currentRound} finished! Incorrect answer. The correct answers were: ${bestCaptions.join(' and ')}`);
             }
             setShowModal(true); // Show the modal when message is set
-
-            await createRound(roundScore, selectedQuote); // Pass selectedQuote to createRound
+            await completeRound(roundScore, selectedQuote); // Pass selectedQuote to createRound
         } catch (error) {
             console.log(error);
         }
@@ -111,7 +108,7 @@ export default function NewGame({ loggedIn, userId }) {
         }
     };
 
-    const createRound = async (roundScore, selectedQuote) => {
+    const completeRound = async (roundScore, selectedQuote) => {
         try {
             await API.createRound(gameId, memeId, selectedQuote, roundScore);
         } catch (error) {
@@ -119,6 +116,7 @@ export default function NewGame({ loggedIn, userId }) {
         }
     };
 
+    // this is for handling the caption selected! Where the caption selected is passed
     const handleSelect = (quote) => {
         setSelectedQuote(quote);
         if (!roundCreated.current) {
@@ -128,18 +126,29 @@ export default function NewGame({ loggedIn, userId }) {
         }
     };
 
+    // this is for handling the exit game button!
+    // this is for handling the exit game button!
     const handleExitGame = async () => {
+        console.log("handleExitGame triggered"); // Debugging line
+    
         try {
-            if (!loggedIn || !gameFinished) {
-                console.log("deleting game");
+            if (gameId && (!loggedIn || !gameFinished)) {
+                console.log("Deleting game with ID:", gameId); // Debugging line
                 await API.deleteGame(gameId);
+                console.log("Game deleted successfully"); // Debugging line
             }
-            navigate('/'); // Navigate to the home page 
         } catch (error) {
-            console.log(error);
+            console.log("Error in handleExitGame:", error); // Debugging line
+        } finally {
+            if (timerId) {
+                clearInterval(timerId); // Clear the timer
+                console.log("Timer cleared"); // Debugging line
+            }
+            console.log("Navigating to home page"); // Debugging line
+            navigate('/'); // Navigate to the home page
         }
     };
-
+    // this is for handling the close modal button!
     const handleCloseModal = () => {
         setShowModal(false); // Close the modal
         if (currentRound < totalRound) {
@@ -153,94 +162,92 @@ export default function NewGame({ loggedIn, userId }) {
     return (
         <Container className="d-flex flex-column align-items-center mt-3">
             {showScore ? (
-                <Score gameId={gameId} />
+                <Score gameId={gameId}/>
             ) : (
                 <>
-                    <Card className="w-100 mb-3" style={{ maxWidth: '800px', position: 'relative' }}>
+                    <Card className="w-100 mb-3" style={{maxWidth: '800px', position: 'relative'}}>
                         <div style={{
                             position: 'absolute',
                             top: '10px',
                             left: '10px',
                             backgroundColor: 'rgba(0, 0, 0, 0.8)',
-color: 'white',
-padding: '5px 10px',
-borderRadius: '5px'
-}}>
-Round {currentRound}
-</div>
-<div style={{
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    color: 'white',
-    padding: '5px 10px',
-    borderRadius: '5px'
-}}>
-    {timeLeft} seconds left
-</div>
-<Card.Img variant="top" src={imgUrl} className="d-block mx-auto" style={{ maxWidth: '400px' }} />
-<Card.Body className="text-center">
-    <p>Guess the caption that best fits the meme</p>
-    <Row>
-        {quotes.map((quote, index) => (
-            <Col xs={12} md={6} className="mb-2" key={index}>
-                <Button
-                    variant="outline-secondary"
-                    className={`w-100 ${selectedQuote === quote ? 'active' : ''}`}
-                    onClick={() => handleSelect(quote)}
-                >
-                    {quote}
-                </Button>
-            </Col>
-        ))}
-    </Row>
-</Card.Body>
-</Card>
-<Modal show={showModal} onHide={handleCloseModal}>
-    <Modal.Header closeButton>
-        <Modal.Title>Round Result</Modal.Title>
-    </Modal.Header>
-    <Modal.Body>
-        {console.log("Correct Answers:", correctAnswers)}
-        {console.log("Selected Quote:", selectedQuote)}
-        <Alert
-            variant={correctAnswers.includes(selectedQuote) ? 'success' : 'danger'}
-            className="text-center p-4 shadow rounded"
-            style={{
-                background: correctAnswers.includes(selectedQuote) ? 'linear-gradient(135deg, #a8e063 0%, #56ab2f 100%)' : 'linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%)',
-                color: 'white',
-            }}
-        >
-            <h4 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{message.split('.')[0]}</h4>
-            <p style={{ fontSize: '1.2rem', marginTop: '1rem' }}>
-                {correctAnswers.includes(selectedQuote) ? (
-                    <span>5 points have been added to your score!</span>
-                ) : (
-                    <span>
-                        The correct answers were:
-                        <ul style={{ textAlign: 'left', margin: '1rem 0', paddingLeft: '1.5rem' }}>
-                            {correctAnswers.map((answer, index) => (
-                                <li key={index}>{answer}</li>
-                            ))}
-                        </ul>
-                    </span>
-                )}
-            </p>
-        </Alert>
-    </Modal.Body>
-    <Modal.Footer>
-        <Button variant="secondary" onClick={handleCloseModal}>
-            Close
-        </Button>
-    </Modal.Footer>
-</Modal>
-</>
-)}
-    <Button variant="danger" onClick={handleExitGame} className="mt-3 mb-5">
-Exit Game
-</Button>
-</Container>
-);
+                            color: 'white',
+                            padding: '5px 10px',
+                            borderRadius: '5px'
+                        }}>
+                            Round {currentRound}
+                        </div>
+                        <div style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            color: 'white',
+                            padding: '5px 10px',
+                            borderRadius: '5px'
+                        }}>
+                            {timeLeft} seconds left
+                        </div>
+                        <Card.Img variant="top" src={imgUrl} className="d-block mx-auto" style={{maxWidth: '400px'}}/>
+                        <Card.Body className="text-center">
+                            <p>Guess the caption that best fits the meme</p>
+                            <Row>
+                                {quotes.map((quote, index) => (
+                                    <Col xs={12} md={6} className="mb-2" key={index}>
+                                        <Button
+                                            variant="outline-secondary"
+                                            className={`w-100 ${selectedQuote === quote ? 'active' : ''}`}
+                                            onClick={() => handleSelect(quote)}
+                                        >
+                                            {quote}
+                                        </Button>
+                                    </Col>
+                                ))}
+                            </Row>
+                        </Card.Body>
+                    </Card>
+                    <Modal show={showModal} onHide={handleCloseModal}>
+                        <Modal.Header closeButton>
+                            <Modal.Title>Round Result</Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <Alert
+                                variant={correctAnswers.includes(selectedQuote) ? 'success' : 'danger'}
+                                className="text-center p-4 shadow rounded"
+                                style={{
+                                    background: correctAnswers.includes(selectedQuote) ? 'linear-gradient(135deg, #a8e063 0%, #56ab2f 100%)' : 'linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%)',
+                                    color: 'white',
+                                }}
+                            >
+                                <h4 style={{fontSize: '1.5rem', fontWeight: 'bold'}}>{message.split('.')[0]}</h4>
+                                <div style={{fontSize: '1.2rem', marginTop: '1rem'}}>
+                                    {correctAnswers.includes(selectedQuote) ? (
+                                        <span>5 points have been added to your score!</span>
+                                    ) : (
+                                        <>
+                                            <span>The correct answers were:</span>
+                                            <ul style={{textAlign: 'left', margin: '1rem 0', paddingLeft: '1.5rem'}}>
+                                                {correctAnswers.map((answer, index) => (
+                                                    <li key={index}>{answer}</li>
+                                                ))}
+                                            </ul>
+                                        </>
+                                    )}
+                                </div>
+                            </Alert>
+                        </Modal.Body>
+                        <Modal.Footer>
+                            <Button variant="secondary" onClick={handleCloseModal}>
+                                Close
+                            </Button>
+                        </Modal.Footer>
+                    </Modal>
+                </>
+            )}
+            <Button variant="danger" onClick={handleExitGame} className="mt-3 mb-5">
+                Exit Game
+            </Button>
+        </Container>
+    );
 }
                            

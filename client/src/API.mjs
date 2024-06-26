@@ -80,19 +80,24 @@ const completeGame = async (id, totalScore) => {
 
 // delete game and its rounds
 const deleteGame = async (gameId) => {
-    const response = await fetch(SERVER_URL + `/api/games/${gameId}`, {
-        method: 'DELETE',
-    });
-    if (response.ok) {
-        const result = await response.json();
-        return result;
-    } else {
-        const errDetails = await response.text();
-        throw errDetails;
+    try {
+        const response = await fetch(SERVER_URL+`/api/games/${gameId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to delete game: ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log("Game deleted successfully:", data); // Debugging line
+        return data;
+    } catch (error) {
+        console.error("Error in API.deleteGame:", error); // Debugging line
+        throw error;
     }
 };
-
-
 
 const createRound = async (gameId, memeId, selectedCaption, score) => {
     try {
