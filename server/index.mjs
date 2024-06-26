@@ -105,43 +105,66 @@ app.get('/api/sessions/current', isLoggedIn, (req, res) => {
 
 // Here we add the routes for game
 
-app.get('/api/meme', async (req, res) => {
+app.post('/api/newgame', async (req, res) => {
+    const {userId} = req.body;
     const {excludeIds} = req.query;
     const excludeIdsArray = excludeIds ? excludeIds.split(',').map(Number) : [];
     try {
-        const result = await memeDao.getRandomMeme(excludeIdsArray);
-        if (!result) {
-            throw new Error('No meme found');
-        }
-        const bestMatchCaptions = await memeDao.getBestMatchCaptions(result.id);
-        if (!bestMatchCaptions.length) {
-            throw new Error('No best match captions found');
-        }
+        const rounds = [];
+        const usedMemeIds = new Set(excludeIdsArray);
 
-        const additionalCaptions = await memeDao.getAdditionalCaptions(result.id, bestMatchCaptions.map(c => c.id));
+        for (let i = 0; i < 3; i++) {
+            const result = await memeDao.getRandomMeme(Array.from(usedMemeIds));
+            if (!result) {
+                throw new Error('No meme found');
+            }
+            usedMemeIds.add(result.id);
 
-        // here we wawnt to ensure unique captions
-        const uniqueCaptions = Array.from(new Set([...bestMatchCaptions, ...additionalCaptions]));
+            const bestMatchCaptions = await memeDao.getBestMatchCaptions(result.id);
+            if (!bestMatchCaptions.length) {
+                throw new Error('No best match captions found');
+            }
 
-        // if there are fewer than 7 unique captions, fetch more until we have 7
+            const additionalCaptions = await memeDao.getAdditionalCaptions(result.id, bestMatchCaptions.map(c => c.id));
 
+            // Ensure unique captions
+            const uniqueCaptions = Array.from(new Set([...bestMatchCaptions, ...additionalCaptions]));
 
-        // If there are fewer than 7 unique captions, fetch more until we have 7
-        while (uniqueCaptions.length < 7) {
-            const moreCaptions = await memeDao.getRandomCaptions(); // Assuming this function fetches more random captions
-            moreCaptions.forEach(caption => {
-                if (!uniqueCaptions.includes(caption.text) && uniqueCaptions.length < 7) {
-                    uniqueCaptions.push(caption);
-                }
+            // If there are fewer than 7 unique captions, fetch more until we have 7
+            while (uniqueCaptions.length < 7) {
+                const moreCaptions = await memeDao.getRandomCaptions();
+                moreCaptions.forEach(caption => {
+                    if (!uniqueCaptions.includes(caption.text) && uniqueCaptions.length < 7) {
+                        uniqueCaptions.push(caption);
+                    }
+                });
+            }
+
+            uniqueCaptions.sort(() => 0.5 - Math.random()); // Shuffle the captions
+
+            rounds.push({
+                meme: result,
+                captions: uniqueCaptions
             });
         }
 
-        uniqueCaptions.sort(() => 0.5 - Math.random()); // Shuffle the captions
+        // Create a game
+        const gameId = await memeDao.createGame(userId || null);
 
+        // Create rounds with selectedCaption as null
+        const roundIds = [];
+        for (const round of rounds) {
+            const roundId = await memeDao.createRound(gameId, round.meme.id, null, 0);
+            roundIds.push({
+                roundId,
+                meme: round.meme,
+                captions: round.captions
+            });
+        }
 
         res.json({
-            meme: result,
-            captions: uniqueCaptions
+            gameId,
+            rounds: roundIds
         });
     } catch (err) {
         console.error('Error occurred while fetching the meme:', err.message);
@@ -213,15 +236,16 @@ app.delete('/api/games/:gameId', async (req, res) => {
 });
 
 
-// Endpoint to create a new round
-app.post('/api/rounds', async (req, res) => {
-    const {gameId, memeId, selectedCaption, score} = req.body;
+// Endpoint to complete a round
+app.post('/api/rounds/:roundId/complete', async (req, res) => {
+    const { roundId } = req.params;
+    const { selectedQuote, roundScore } = req.body;
     try {
-        const roundId = await memeDao.createRound(gameId, memeId, selectedCaption, score);
-        res.json({roundId});
+        await memeDao.completeRound(roundId, selectedQuote, roundScore);
+        res.json({ message: 'Round completed successfully' });
     } catch (err) {
-        console.error('Error creating round:', err.message);
-        res.status(500).json({error: 'An error occurred while creating the round.'});
+        console.error('Error completing round:', err.message);
+        res.status(500).json({ error: 'An error occurred while completing the round.' });
     }
 });
 

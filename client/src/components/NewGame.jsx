@@ -4,12 +4,11 @@ import {useNavigate} from 'react-router-dom'; // Import useNavigate
 import Score from './Score'; // Import the Score component
 import API from '../API.mjs';
 
-export default function NewGame({loggedIn, userId}) {
+export default function NewGame({loggedIn, newGameData}) {
 
-    const [usedMemes, setUsedMemes] = useState([]);
     const [imgUrl, setImgUrl] = useState('');
     const [quotes, setQuotes] = useState([]);
-    const [currentRound, setCurrentRound] = useState(0);
+    const [currentRound, setCurrentRound] = useState(1);
     const [totalRound, setTotalRound] = useState(loggedIn ? 3 : 1);
     const [correctAnswers, setCorrectAnswers] = useState([]);
     const [selectedQuote, setSelectedQuote] = useState(null);
@@ -22,48 +21,26 @@ export default function NewGame({loggedIn, userId}) {
     const [memeId, setMemeId] = useState(null);
     const [gameFinished, setGameFinished] = useState(false);
     const [timerId, setTimerId] = useState(null);
-
-    const gameCreated = useRef(false); // Track if game is created
-    const roundCreated = useRef(false); // Track if round is created
+    const [roundId, setRoundId] = useState(null);
 
     const navigate = useNavigate(); // Initialize useNavigate
 
     useEffect(() => {
-        if (!gameCreated.current) {
-            gameCreated.current = true;
-            createNewGame();
-        }
-    }, [loggedIn]);
+        startNewRound();
+    }, [currentRound]); // Add currentRound as a dependency
 
-    const createNewGame = async () => {
-        try {
-            const game = await API.createGame(userId || null);
-            setGameId(game.gameId);
-            if (game.gameId) {
-                startNewRound();
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
+    // Function to start a new round
     const startNewRound = async () => {
         setSelectedQuote(null);
-        setQuotes([]);
-        setCurrentRound((prevRound) => prevRound + 1);
+        setCorrectAnswers([]);
         setTimeLeft(5);
         setMessage('');
-        roundCreated.current = false;
-
-        try {
-            const {meme, captions} = await API.getRandomMeme(usedMemes);
-            setImgUrl(meme.url);
-            setQuotes(captions.map(caption => caption.text)); // Directly set captions
-            setMemeId(meme.id);
-            setUsedMemes((prevUsedMemes) => [...prevUsedMemes, meme.id]);
-        } catch (error) {
-            console.log(error);
-        }
+        const roundData = newGameData.rounds[currentRound - 1]; // Adjust index for 0-based array
+        setRoundId(roundData.roundId);
+        setGameId(newGameData.gameId);
+        setImgUrl(roundData.memeUrl);
+        setQuotes(roundData.captions.map(caption => caption.text)); // Directly set captions
+        setMemeId(roundData.memeId);
     };
 
     useEffect(() => {
@@ -73,8 +50,7 @@ export default function NewGame({loggedIn, userId}) {
             }, 1000);
             setTimerId(timerId);
             return () => clearInterval(timerId);
-        } else if (timeLeft === 0 && !roundCreated.current) {
-            roundCreated.current = true;
+        } else if (timeLeft === 0) {
             handleRoundEnd(selectedQuote); // Pass selectedQuote to handleRoundEnd
         }
     }, [timeLeft]);
@@ -110,24 +86,20 @@ export default function NewGame({loggedIn, userId}) {
 
     const completeRound = async (roundScore, selectedQuote) => {
         try {
-            await API.createRound(gameId, memeId, selectedQuote, roundScore);
+            await API.completeRound(roundId, selectedQuote, roundScore);
         } catch (error) {
-            console.log(error);
+            console.log("Error in completeRound:", error);
         }
     };
 
-    // this is for handling the caption selected! Where the caption selected is passed
+    // Function to handle caption selection
     const handleSelect = (quote) => {
         setSelectedQuote(quote);
-        if (!roundCreated.current) {
-            roundCreated.current = true;
-            clearInterval(timerId); // Clear the timer
-            handleRoundEnd(quote); // Pass the selected quote to handleRoundEnd
-        }
+        clearInterval(timerId); // Clear the timer
+        handleRoundEnd(quote); // Pass the selected quote to handleRoundEnd
     };
 
-    // this is for handling the exit game button!
-    // this is for handling the exit game button!
+    // Function to handle exit game
     const handleExitGame = async () => {
         console.log("handleExitGame triggered"); // Debugging line
     
@@ -148,11 +120,12 @@ export default function NewGame({loggedIn, userId}) {
             navigate('/'); // Navigate to the home page
         }
     };
-    // this is for handling the close modal button!
+
+    // Function to handle modal close
     const handleCloseModal = () => {
         setShowModal(false); // Close the modal
         if (currentRound < totalRound) {
-            startNewRound(); // Start the next round
+            setCurrentRound((prevRound) => prevRound + 1);
         } else {
             completeGame();
             setGameFinished(true);

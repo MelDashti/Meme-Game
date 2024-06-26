@@ -99,26 +99,23 @@ const deleteGame = async (gameId) => {
     }
 };
 
-const createRound = async (gameId, memeId, selectedCaption, score) => {
-    try {
-        const response = await fetch(SERVER_URL + '/api/rounds', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ gameId, memeId, selectedCaption, score }),
-        });
-        if (response.ok) {
-            console.log('Round created', await response.json());
-        } else {
-            const errDetails = await response.text();
-            console.log('Round creation failed:', errDetails);
-            throw new Error(errDetails);
-        }
-    } catch (error) {
-        console.error('Error in createRound:', error);
+const completeRound = async (roundId, selectedQuote, roundScore) => {
+    const response = await fetch(SERVER_URL + `/api/rounds/${roundId}/complete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ selectedQuote, roundScore }),
+    });
+    if (response.ok) {
+        const result = await response.json();
+        return result;
+    } else {
+        const errDetails = await response.text();
+        throw errDetails;
     }
 };
+
 
 const getRoundsForGame = async (gameId) => {
     const response = await fetch(SERVER_URL + `/api/games/${gameId}/rounds`,{
@@ -165,6 +162,7 @@ const login = async(credentials)=>{
     }
 };
 
+
 const getUserInfo = async () => {
     const response = await fetch(SERVER_URL + '/api/sessions/current', {
       credentials: 'include',
@@ -177,6 +175,26 @@ const getUserInfo = async () => {
     }
   };
 
+
+// Combined function to create a game, fetch a random meme, and create a round
+const createGameWithRound = async (userId, excludeIds = []) => {
+    const response = await fetch(SERVER_URL + `/api/newgame?excludeIds=${excludeIds.join(',')}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+        credentials: 'include',
+    });
+    if (response.ok) {
+        const data = await response.json();
+        return data;
+    } else {
+        const errDetails = await response.text();
+        throw errDetails;
+    }
+};
+  
 
   
   const logOut = async() => {
@@ -197,8 +215,9 @@ const getUserInfo = async () => {
     getBestCaption,
     createGame,
     completeGame,
-    createRound,
+    completeRound,
     getRoundsForGame,
     deleteGame,
     getAllGamesForUser,
+    createGameWithRound,
 };

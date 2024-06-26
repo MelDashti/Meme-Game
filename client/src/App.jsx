@@ -11,7 +11,7 @@ import API from './API.mjs';
 function App() {
     const [loggedIn, setLoggedIn] = useState(false);
     const [user, setUser] = useState(null);
-
+    const [newGameData, setNewGameData] = useState({});
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -44,8 +44,8 @@ function App() {
             <NavComp loggedIn={loggedIn} handleLogout={handleLogout}/>
             <Container fluid className="flex-grow-1 d-flex flex-column">
                 <Routes>
-                    <Route path="/" element={<Game userId={user?.id}/>}/>
-                    <Route path='/newgame' element={<NewGame loggedIn={loggedIn} userId={user?.id}/>}/>
+                    <Route path="/" element={<Game userId={user?.id} setNewGameData={setNewGameData}/>}/>
+                    <Route path='/newgame' element={<NewGame loggedIn={loggedIn} newGameData={newGameData}/>}/>
                     <Route path="/profile" element={<Profile/>}/>
                     <Route path='/login' element={
                         <LoginComp loggedInSuccess={loggedInSuccess}/>

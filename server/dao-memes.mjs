@@ -26,6 +26,23 @@ export default function MemeDao(){
         });
     };
 
+    this.completeRound = (roundId, selectedQuote, roundScore) => {
+        return new Promise((resolve, reject) => {
+            const query = `
+                UPDATE Rounds
+                SET selectedCaption = ?, score = ?
+                WHERE id = ?
+            `;
+            db.run(query, [selectedQuote, roundScore, roundId], function (err) {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    };
+    
     this.getBestMatchCaptions = (memeId) =>{
         return new Promise((resolve, reject) => {
             const query = `

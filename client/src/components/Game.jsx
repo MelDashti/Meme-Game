@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 import { Button, Container, Row, Col, Card } from "react-bootstrap";
 import API from '../API.mjs';
 
-export default function Game({ userId }) {
+export default function Game(props) {
+    const { userId, setNewGameData } = props;
     const [games, setGames] = useState([]);
-
+    const navigate = useNavigate();
     useEffect(() => {
         const fetchGameSummary = async () => {
             try {
@@ -25,13 +26,33 @@ export default function Game({ userId }) {
         }
     }, [userId]);
 
+    const createNewGame = async () => {
+        try {
+            const { gameId, rounds } = await API.createGameWithRound(userId || null);
+            const newGameData = {
+                gameId,
+                rounds: rounds.map(round => ({
+                    roundId: round.roundId,
+                    memeUrl: round.meme.url,
+                    memeId: round.meme.id,
+                    captions: round.captions,
+                })),
+            };
+            console.log(newGameData);
+            setNewGameData(newGameData);
+            navigate("/newgame");
+        } catch (error) {
+            console.error("Error in createNewGame:", error);
+        }
+    }
+
+    
+    
     return (
         <Container className="mt-5">
             <Row className="mb-4 justify-content-center">
                 <Col xs={12} md={8} className="text-center">
-                    <Link to="/newGame">
-                        <Button variant="success" size="lg">Start New Game</Button>
-                    </Link>
+                    <Button variant="success" size="lg" onClick={createNewGame}>Start New Game</Button>
                 </Col>
             </Row>
            {userId && <Row className="mb-4 justify-content-center">
