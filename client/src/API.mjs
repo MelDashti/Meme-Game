@@ -49,6 +49,7 @@ const createGame = async (userId) => {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({ userId }),
+        credentials: 'include',
     });
     if (response.ok) {
         const game = await response.json();
@@ -115,7 +116,9 @@ const createRound = async (gameId, memeId, selectedCaption, score) => {
 };
 
 const getRoundsForGame = async (gameId) => {
-    const response = await fetch(SERVER_URL + `/api/games/${gameId}/rounds`);
+    const response = await fetch(SERVER_URL + `/api/games/${gameId}/rounds`,{
+        credentials: 'include',
+    });
     if (response.ok) {
         const rounds = await response.json();
         return rounds;
@@ -126,7 +129,9 @@ const getRoundsForGame = async (gameId) => {
 };
 
 const getAllGamesForUser = async (userId) => {
-    const response = await fetch(SERVER_URL + `/api/users/${userId}/games`);
+const response = await fetch(SERVER_URL + `/api/users/${userId}/games`,{
+    credentials: 'include',
+});
     if (response.ok) {
       const games = await response.json();
       return games;

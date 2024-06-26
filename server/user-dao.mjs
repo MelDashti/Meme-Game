@@ -12,14 +12,12 @@ export const getUser = (email, password) => {
         resolve(false); 
       }
       else {
-        const user = {id: row.id, username: row.email, name: row.name};
+        const user = {id: row.id, username: row.username, email: row.email};
         
         crypto.scrypt(password, row.salt, 32, function(err, hashedPassword) {
           if (err) reject(err);
           
           const storedPasswordBuffer = Buffer.from(row.password, 'hex');
-          console.log('Stored Password Buffer Length:', storedPasswordBuffer.length);
-          console.log('Hashed Password Length:', hashedPassword.length);
 
           if (storedPasswordBuffer.length !== hashedPassword.length) {
             console.error('Hash length mismatch:', storedPasswordBuffer.length, hashedPassword.length);
@@ -38,7 +36,7 @@ export const getUser = (email, password) => {
 
 export const getUserById = (id) => {
   return new Promise((resolve, reject) => {
-    const sql = 'SELECT * FROM user WHERE id = ?';
+    const sql = 'SELECT * FROM Users WHERE id = ?';
     db.get(sql, [id], (err, row) => {
       if (err) { 
         reject(err); 
@@ -47,7 +45,7 @@ export const getUserById = (id) => {
         resolve({error: 'User not found!'}); 
       }
       else {
-        const user = {id: row.id, username: row.email, name: row.name};
+        const user = {id: row.id, username: row.username, email: row.email};
         resolve(user);
       }
     });

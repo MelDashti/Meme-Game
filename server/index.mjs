@@ -38,42 +38,36 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Here we setup passport with local strategy
-// cb is a callback function that is called when the authentication is done
 passport.use(new LocalStrategy(async function verify(username, password, cb){
-    // Here we check if the user exists in the database
     const user = await getUser(username,password);
-    // If the user does not exist, we return an error message
     if(!user)
         return cb(null, false, {message: 'Incorrect username or password'});
     return cb(null, user);
 }));
 
-// Here we serialize the user and save it to the session
+
 passport.serializeUser(function(user, cb){
     cb(null, user);
 })
 
-// here we deserialize the user and retrieve it from the session
+
 passport.deserializeUser(function(user,cb){
     return cb(null, user);
 })
 
-// this is a middleware that checks if the user is logged in 
+
 const isLoggedIn = (req, res, next) => {
     if(req.isAuthenticated()) return next();
     res.status(401).json({message: 'Unauthorized'});
 }
 
 
-// api/sessions. This is the endpoint for the login
+// login
 app.post('/api/sessions', function(req,res,next){
-    // here we use the previously defined local strategy to authenticate the user
     passport.authenticate('local', (err, user, info)=>{
         if(err)
             return next(err);
         if(!user){
-            // Here we display the incorrect login message
             return res.status(401).send(info);
         }
         // If it is successful, perform login
@@ -86,19 +80,28 @@ app.post('/api/sessions', function(req,res,next){
   })(req, res, next);
 });
 
+// test if session is being stored
+app.get('/api/test-session', (req, res) => {
+    if (req.isAuthenticated()) {
+      res.json({ session: req.session });
+      console.log('Session:', req.session);
+    } else {
+      res.status(401).json({ error: 'Not authenticated' });
+    }
+  });
+
+
+
 // This is the logout
-app.delete('/api/sessions/current', (req, res) => {
+app.delete('/api/sessions/current',isLoggedIn, (req, res) => {
     req.logout(() => {
       res.end();
     });
   });
 
   // GET /api/sessions/current
-app.get('/api/sessions/current', (req, res) => {
-    if(req.isAuthenticated()) {
-      res.json(req.user);}
-    else
-      res.status(401).json({error: 'Not authenticated'});
+app.get('/api/sessions/current',isLoggedIn, (req, res) => {
+    res.json(req.user);
   });
 
 
@@ -222,7 +225,8 @@ app.post('/api/rounds', async (req, res) => {
 });
 
   // endpoint to get all games for a user
-  app.get('/api/users/:userId/games', async(req, res)=>{
+  // we use isLoggedIn middleware to check if the user is logged in 
+  app.get('/api/users/:userId/games',isLoggedIn, async(req, res)=>{
     const {userId} = req.params;
     try{
         const games = await memeDao.getAllGamesForUser(userId);

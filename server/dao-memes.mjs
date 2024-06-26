@@ -48,7 +48,7 @@ export default function MemeDao(){
 
     this.getAllGamesForUser = (userId) =>{
         return new Promise((resolve, reject)=>{
-            const query = 'SELECT*FROM Games WHERE userId = ? ORDER BY createdAt DESC';
+            const query = 'SELECT*FROM Games WHERE userId = ? AND completed = 1 ORDER BY createdAt DESC';
             db.all(query, [userId], (err, rows)=>{
                 if(err){
                     reject(err);
