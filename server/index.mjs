@@ -122,12 +122,29 @@ app.get('/api/meme', async (req, res) => {
 
       const additionalCaptions = await memeDao.getAdditionalCaptions(result.id, bestMatchCaptions.map(c => c.id));
 
-      const allCaptions = [...new Set([...bestMatchCaptions, ...additionalCaptions])]; // Remove duplicates
-      allCaptions.sort(() => 0.5 - Math.random());
+      // here we wawnt to ensure unique captions
+      const uniqueCaptions = Array.from(new Set([...bestMatchCaptions, ...additionalCaptions]));
+
+      // if there are fewer than 7 unique captions, fetch more until we have 7
+      
+
+      // If there are fewer than 7 unique captions, fetch more until we have 7
+      while (uniqueCaptions.length < 7) {
+        const moreCaptions = await memeDao.getRandomCaptions(); // Assuming this function fetches more random captions
+        moreCaptions.forEach(caption => {
+          if (!uniqueCaptions.includes(caption.text) && uniqueCaptions.length < 7) {
+            uniqueCaptions.push(caption);
+          }
+        });
+      }
+      console.log('Unique captions:', uniqueCaptions);
+
+      uniqueCaptions.sort(() => 0.5 - Math.random()); // Shuffle the captions
+
 
       res.json({
           meme: result,
-          captions: allCaptions
+          captions: uniqueCaptions
       });
   } catch (err) {
       console.error('Error occurred while fetching the meme:', err.message);
