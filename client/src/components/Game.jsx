@@ -26,6 +26,7 @@ export default function Game(props) {
         }
     }, [userId]);
 
+// function for creating a new game.
     const createNewGame = async () => {
         try {
             const {gameId, rounds} = await API.createGameWithRound(userId || null);
@@ -64,7 +65,7 @@ export default function Game(props) {
                         <Card className="mb-3 shadow">
                             <Card.Header
                                 className="bg-secondary text-white text-center">  {/* Changed to bg-dark for a navy-like blue */}
-                                <h5>Game {gameIndex + 1} - Total Score: {game.totalScore}</h5>
+                                <h5>Game {games.length - gameIndex} - Total Score: {game.totalScore}</h5>
                             </Card.Header>
                             <Card.Body className="bg-light">
                                 <Row>
@@ -80,7 +81,7 @@ export default function Game(props) {
                                                     <Card.Title
                                                         className="text-secondary">Round {roundIndex + 1}</Card.Title>
                                                     <Card.Text><strong>Selected
-                                                        Caption:</strong> {round.selectedCaption}</Card.Text>
+                                                        Caption:</strong> {round.selectedCaption || 'None selected'}</Card.Text>
                                                     <Card.Text><strong>Points:</strong> {round.score}</Card.Text>
                                                 </Card.Body>
                                             </Card>

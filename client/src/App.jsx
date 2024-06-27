@@ -26,9 +26,7 @@ function App() {
 
     // this will handle the logout
     const handleLogout = async () => {
-        // here we call the logout function from the API
         await API.logOut();
-        // here we set the logged in state to false
         setLoggedIn(false);
         setUser(null);
     };

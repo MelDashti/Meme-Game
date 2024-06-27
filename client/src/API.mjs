@@ -1,6 +1,26 @@
 const SERVER_URL = 'http://localhost:3000';
 
 
+// Api call for creating a game with 3 rounds,and fetching a random meme with 7 unique captions for each round
+const createGameWithRound = async (userId, excludeIds = []) => {
+    const response = await fetch(SERVER_URL + `/api/newgame?excludeIds=${excludeIds.join(',')}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({userId}),
+    });
+    if (response.ok) {
+        const data = await response.json();
+        return data;
+    } else {
+        const errDetails = await response.text();
+        throw errDetails;
+    }
+};
+
+
+// Api call for getting the best captions for a meme
 const getBestCaption = async (memeId) => {
     const response = await fetch(SERVER_URL + `/api/best-caption?id=${memeId}`);
     if (response.ok) {
@@ -13,6 +33,7 @@ const getBestCaption = async (memeId) => {
 };
 
 
+// Api call for completing a game
 const completeGame = async (id, totalScore) => {
     const response = await fetch(SERVER_URL + `/api/games/${id}/complete`, {
         method: 'POST',
@@ -30,7 +51,7 @@ const completeGame = async (id, totalScore) => {
     }
 };
 
-// delete game and its rounds
+// Api call for deleting a game and its rounds
 const deleteGame = async (gameId) => {
     try {
         const response = await fetch(SERVER_URL + `/api/games/${gameId}`, {
@@ -49,6 +70,7 @@ const deleteGame = async (gameId) => {
     }
 };
 
+// Api call for completing a round
 const completeRound = async (roundId, selectedQuote, roundScore) => {
     const response = await fetch(SERVER_URL + `/api/rounds/${roundId}/complete`, {
         method: 'POST',
@@ -66,11 +88,9 @@ const completeRound = async (roundId, selectedQuote, roundScore) => {
     }
 };
 
-
+// Api call for getting the rounds for a game
 const getRoundsForGame = async (gameId) => {
-    const response = await fetch(SERVER_URL + `/api/games/${gameId}/rounds`, {
-        credentials: 'include',
-    });
+    const response = await fetch(SERVER_URL + `/api/games/${gameId}/rounds`);
     if (response.ok) {
         const rounds = await response.json();
         return rounds;
@@ -80,6 +100,7 @@ const getRoundsForGame = async (gameId) => {
     }
 };
 
+// Api call for getting all games for a user
 const getAllGamesForUser = async (userId) => {
     const response = await fetch(SERVER_URL + `/api/users/${userId}/games`, {
         credentials: 'include',
@@ -93,7 +114,7 @@ const getAllGamesForUser = async (userId) => {
     }
 };
 
-// authentication related
+// api call for logging in
 const login = async (credentials) => {
     const response = await fetch(SERVER_URL + '/api/sessions', {
         method: 'POST',
@@ -112,7 +133,7 @@ const login = async (credentials) => {
     }
 };
 
-
+// api call for getting the user info
 const getUserInfo = async () => {
     const response = await fetch(SERVER_URL + '/api/sessions/current', {
         credentials: 'include',
@@ -126,26 +147,7 @@ const getUserInfo = async () => {
 };
 
 
-// Combined function to create a game, fetch a random meme, and create a round
-const createGameWithRound = async (userId, excludeIds = []) => {
-    const response = await fetch(SERVER_URL + `/api/newgame?excludeIds=${excludeIds.join(',')}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({userId}),
-        credentials: 'include',
-    });
-    if (response.ok) {
-        const data = await response.json();
-        return data;
-    } else {
-        const errDetails = await response.text();
-        throw errDetails;
-    }
-};
-
-
+// Api call for logging out
 const logOut = async () => {
     const response = await fetch(SERVER_URL + '/api/sessions/current', {
         method: 'DELETE',

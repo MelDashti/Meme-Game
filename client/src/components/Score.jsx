@@ -1,17 +1,18 @@
 import React, {useEffect, useState} from 'react';
-import {Card, Col, Container, Row} from 'react-bootstrap';
+import {Button, Card, Col, Container, Row} from 'react-bootstrap';
 import API from '../API'; // Adjust the import path as necessary
+import { useNavigate } from 'react-router-dom';
 
 export default function Score({gameId}) {
     const [score, setScore] = useState(0);
-    const [rounds, setRounds] = useState([]);
     const [summary, setSummary] = useState([]);
+    const navigate = useNavigate();
 
+    // function for fetching the rounds for a game and calculating the total score
     useEffect(() => {
         const fetchRounds = async () => {
             try {
                 const roundsData = await API.getRoundsForGame(gameId);
-                setRounds(roundsData);
                 const totalScore = roundsData.reduce((acc, round) => acc + round.score, 0);
                 setScore(totalScore);
                 setSummary(roundsData.filter(round => round.score > 0));
@@ -22,6 +23,7 @@ export default function Score({gameId}) {
 
         fetchRounds();
     }, [gameId]);
+
 
     return (
         <Container className="d-flex flex-column align-items-center mt-5">

@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {Alert, Button, Card, Col, Container, Modal, Row} from 'react-bootstrap';
-import {useNavigate} from 'react-router-dom'; // Import useNavigate
-import Score from './Score'; // Import the Score component
+import {useNavigate} from 'react-router-dom'; 
+import Score from './Score'; 
 import API from '../API.mjs';
 
 export default function NewGame({loggedIn, newGameData}) {
@@ -23,23 +23,23 @@ export default function NewGame({loggedIn, newGameData}) {
     const [timerId, setTimerId] = useState(null);
     const [roundId, setRoundId] = useState(null);
 
-    const navigate = useNavigate(); // Initialize useNavigate
+    const navigate = useNavigate(); 
 
     useEffect(() => {
         startNewRound();
-    }, [currentRound]); // Add currentRound as a dependency
+    }, [currentRound]); // Every time round is changed, startNewRound is called
 
     // Function to start a new round
     const startNewRound = async () => {
         setSelectedQuote(null);
         setCorrectAnswers([]);
-        setTimeLeft(5);
+        setTimeLeft(30);
         setMessage('');
-        const roundData = newGameData.rounds[currentRound - 1]; // Adjust index for 0-based array
+        const roundData = newGameData.rounds[currentRound - 1]; // he we adjust index for 0-based array
         setRoundId(roundData.roundId);
         setGameId(newGameData.gameId);
         setImgUrl(roundData.memeUrl);
-        setQuotes(roundData.captions.map(caption => caption.text)); // Directly set captions
+        setQuotes(roundData.captions.map(caption => caption.text)); // Directly set the captions
         setMemeId(roundData.memeId);
     };
 
@@ -55,6 +55,7 @@ export default function NewGame({loggedIn, newGameData}) {
         }
     }, [timeLeft]);
 
+    // function to handle the end of the round
     const handleRoundEnd = async (selectedQuote) => {
         let roundScore = 0;
         try {
@@ -75,6 +76,7 @@ export default function NewGame({loggedIn, newGameData}) {
         }
     };
 
+// function for completing the game by sending the gameId and totalScore to the API. Game row is updated.
     const completeGame = async () => {
         try {
             await API.completeGame(gameId, totalScore);
@@ -84,6 +86,7 @@ export default function NewGame({loggedIn, newGameData}) {
         }
     };
 
+//  function for completing the round by sending the roundId, selectedQuote, and roundScore to the API. Round row is updated.
     const completeRound = async (roundScore, selectedQuote) => {
         try {
             await API.completeRound(roundId, selectedQuote, roundScore);
@@ -95,8 +98,8 @@ export default function NewGame({loggedIn, newGameData}) {
     // Function to handle caption selection
     const handleSelect = (quote) => {
         setSelectedQuote(quote);
-        clearInterval(timerId); // Clear the timer
-        handleRoundEnd(quote); // Pass the selected quote to handleRoundEnd
+        clearInterval(timerId); 
+        handleRoundEnd(quote); 
     };
 
     // Function to handle exit game
@@ -106,16 +109,16 @@ export default function NewGame({loggedIn, newGameData}) {
                 await API.deleteGame(gameId);
             }
         } catch (error) {
-            console.log("Error in handleExitGame:", error); // Debugging line
+            console.log("Error in handleExitGame:", error); 
         } finally {
             if (timerId) {
-                clearInterval(timerId); // Clear the timer
+                clearInterval(timerId); 
             }
-            navigate('/'); // Navigate to the home page
+            navigate('/'); 
         }
     };
 
-    // Function to handle modal close
+    // function to handle modal close
     const handleCloseModal = () => {
         setShowModal(false); // Close the modal
         if (currentRound < totalRound) {

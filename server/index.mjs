@@ -95,8 +95,8 @@ app.get('/api/sessions/current', isLoggedIn, (req, res) => {
 });
 
 
-// Here we add the routes for game
 
+// endpoint to create a new game
 app.post('/api/newgame', async (req, res) => {
     const {userId} = req.body;
     const {excludeIds} = req.query;
@@ -117,7 +117,7 @@ app.post('/api/newgame', async (req, res) => {
                 throw new Error('No best match captions found');
             }
 
-            const additionalCaptions = await memeDao.getAdditionalCaptions(result.id, bestMatchCaptions.map(c => c.id));
+            const additionalCaptions = await memeDao.getAdditionalCaptions(bestMatchCaptions.map(c => c.id));
 
             // Ensure unique captions
             const uniqueCaptions = Array.from(new Set([...bestMatchCaptions, ...additionalCaptions]));
@@ -187,7 +187,6 @@ app.post('/api/games/:id/complete', async (req, res) => {
         res.status(500).json({error: 'An error occurred while completing a game.'});
     }
 })
-
 
 
 // Endpoint for deleting a game with all its rounds
