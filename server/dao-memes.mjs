@@ -4,7 +4,7 @@ import Caption from './caption.mjs';
 import dayjs from 'dayjs';
 
 
-export default function MemeDao(){
+export default function MemeDao() {
 
     // this function will retrieve a random Meme from the db
     // excludeIds is an array of meme ids that should be excluded from the selection
@@ -42,8 +42,8 @@ export default function MemeDao(){
             });
         });
     };
-    
-    this.getBestMatchCaptions = (memeId) =>{
+
+    this.getBestMatchCaptions = (memeId) => {
         return new Promise((resolve, reject) => {
             const query = `
                 SELECT c.id, c.text 
@@ -63,13 +63,13 @@ export default function MemeDao(){
         });
     }
 
-    this.getAllGamesForUser = (userId) =>{
-        return new Promise((resolve, reject)=>{
+    this.getAllGamesForUser = (userId) => {
+        return new Promise((resolve, reject) => {
             const query = 'SELECT*FROM Games WHERE userId = ? AND completed = 1 ORDER BY createdAt DESC';
-            db.all(query, [userId], (err, rows)=>{
-                if(err){
+            db.all(query, [userId], (err, rows) => {
+                if (err) {
                     reject(err);
-                }else{
+                } else {
                     resolve(rows);
                 }
             });
@@ -93,10 +93,7 @@ export default function MemeDao(){
             });
         });
     };
-    
-    
-    
-    
+
     this.getAdditionalCaptions = (memeId, excludeIds) => {
         return new Promise((resolve, reject) => {
             const query = `
@@ -116,85 +113,68 @@ export default function MemeDao(){
         });
     };
 
-    this.checkCaption = (memeId, captionId) =>{
-        return new Promise((resolve, reject)=>{
+    this.checkCaption = (memeId, captionId) => {
+        return new Promise((resolve, reject) => {
             const query = 'SELECT*FROM CAPTIONS WHERE id = ? AND memeId = ?';
-            db.get(query, [captionId, memeId], (err, row)=>{
-                if(err){
+            db.get(query, [captionId, memeId], (err, row) => {
+                if (err) {
                     reject(err);
-                }else{
-                    resolve(row?true:false);
+                } else {
+                    resolve(row ? true : false);
                 }
             })
         })
     }
 
 // this is for creating a game
-    this.createGame = (userId) =>{
-        return new Promise((resolve,reject)=>{
+    this.createGame = (userId) => {
+        return new Promise((resolve, reject) => {
             const createdAt = dayjs().format();
-            db.run('INSERT INTO Games (userId, totalScore, createdAt, completed) VALUES (?, 0, ?, 0)', [userId, createdAt], function(err) {
-                if(err){
+            db.run('INSERT INTO Games (userId, totalScore, createdAt, completed) VALUES (?, 0, ?, 0)', [userId, createdAt], function (err) {
+                if (err) {
                     reject(err);
-                }else{
+                } else {
                     resolve(this.lastID); // returns the id of the newly created id
                 }
             });
         });
     }
-    
-    this.completeGame = (id, totalScore) =>{
-        return new Promise((resolve, reject)=>{
-            db.run('UPDATE Games SET totalScore = ?, completed = 1 WHERE id = ?', [totalScore, id], function(err){
-                if(err){
+
+    this.completeGame = (id, totalScore) => {
+        return new Promise((resolve, reject) => {
+            db.run('UPDATE Games SET totalScore = ?, completed = 1 WHERE id = ?', [totalScore, id], function (err) {
+                if (err) {
                     reject(err);
-                }else{
+                } else {
                     resolve();
                 }
             });
         });
     }
 
-    
+
     // this creates a new round
-    this.createRound = (gameId, memeId, selectedCaption, score) =>{
-        return new Promise((resolve, reject)=>{
-            console.log('Creating a new round...');
-            console.log(gameId, memeId, selectedCaption, score);
-            db.run('INSERT INTO Rounds (gameId, memeId, selectedCaption, score) VALUES (?, ?, ?, ?)', [gameId, memeId, selectedCaption, score], function(err) {
+    this.createRound = (gameId, memeId, selectedCaption, score) => {
+        return new Promise((resolve, reject) => {
+            db.run('INSERT INTO Rounds (gameId, memeId, selectedCaption, score) VALUES (?, ?, ?, ?)', [gameId, memeId, selectedCaption, score], function (err) {
                 if (err) reject(err);
                 else resolve(this.lastID); // Return the ID of the newly created round
-              });
+            });
         });
     }
-    
-    // // get rounds of a game
-    // this.getRoundsForGame = (gameId)=>{
-    //     return new Promise((resolve, reject)=>{
-    //         db.all('SELECT * FROM Rounds WHERE gameId = ?', [gameId], (err, rows) => {
-    //             if (err) reject(err);
-    //             else resolve(rows);
-    //           });
-    //     });
-    // }
-        
-        
+
+
     // here we delete a game and it's associated rounds. (this is for when the user doesn't complete a game)
     this.deleteGameAndRounds = (gameId) => {
         return new Promise((resolve, reject) => {
-            console.log(`Attempting to delete rounds for gameId: ${gameId}`); // Debugging line
             db.run('DELETE FROM ROUNDS WHERE gameId = ?', [gameId], (err) => {
                 if (err) {
-                    console.error(`Error deleting rounds for gameId: ${gameId}`, err); // Debugging line
                     reject(err);
                 } else {
-                    console.log(`Rounds deleted for gameId: ${gameId}`); // Debugging line
                     db.run('DELETE FROM Games WHERE id = ?', [gameId], (err) => {
                         if (err) {
-                            console.error(`Error deleting game with id: ${gameId}`, err); // Debugging line
                             reject(err);
                         } else {
-                            console.log(`Game deleted with id: ${gameId}`); // Debugging line
                             resolve();
                         }
                     });
@@ -202,10 +182,9 @@ export default function MemeDao(){
             });
         });
     };
-    
-    
-    
-    }
+
+
+}
 
 
 

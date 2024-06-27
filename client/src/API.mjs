@@ -1,59 +1,11 @@
 const SERVER_URL = 'http://localhost:3000';
 
-// here we define the API functions for getting game related info
-
-const getRandomMeme = async (excludeIds=[]) => {
-    const response = await fetch(SERVER_URL + `/api/meme?excludeIds=${excludeIds.join(',')}`);
-    if (response.ok) {
-        const memeData = await response.json();
-        return memeData;
-    } else {
-        const errDetails = await response.text();
-        throw errDetails;
-    }
-};
-
-const checkCaption = async (memeId, captionId) => {
-    const response = await fetch(SERVER_URL + '/api/check-caption', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ memeId, captionId }),
-    });
-    if (response.ok) {
-        const result = await response.json();
-        return result;
-    } else {
-        const errDetails = await response.text();
-        throw errDetails;
-    }
-};
 
 const getBestCaption = async (memeId) => {
     const response = await fetch(SERVER_URL + `/api/best-caption?id=${memeId}`);
     if (response.ok) {
         const bestCaption = await response.json();
         return bestCaption;
-    } else {
-        const errDetails = await response.text();
-        throw errDetails;
-    }
-};
-
-// {gameId} is returned by the server
-const createGame = async (userId) => {
-    const response = await fetch(SERVER_URL + '/api/games', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId }),
-        credentials: 'include',
-    });
-    if (response.ok) {
-        const game = await response.json();
-        return game;
     } else {
         const errDetails = await response.text();
         throw errDetails;
@@ -67,7 +19,7 @@ const completeGame = async (id, totalScore) => {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ totalScore }),
+        body: JSON.stringify({totalScore}),
     });
     if (response.ok) {
         const result = await response.json();
@@ -81,7 +33,7 @@ const completeGame = async (id, totalScore) => {
 // delete game and its rounds
 const deleteGame = async (gameId) => {
     try {
-        const response = await fetch(SERVER_URL+`/api/games/${gameId}`, {
+        const response = await fetch(SERVER_URL + `/api/games/${gameId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -91,10 +43,8 @@ const deleteGame = async (gameId) => {
             throw new Error(`Failed to delete game: ${response.statusText}`);
         }
         const data = await response.json();
-        console.log("Game deleted successfully:", data); // Debugging line
         return data;
     } catch (error) {
-        console.error("Error in API.deleteGame:", error); // Debugging line
         throw error;
     }
 };
@@ -105,7 +55,7 @@ const completeRound = async (roundId, selectedQuote, roundScore) => {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ selectedQuote, roundScore }),
+        body: JSON.stringify({selectedQuote, roundScore}),
     });
     if (response.ok) {
         const result = await response.json();
@@ -118,7 +68,7 @@ const completeRound = async (roundId, selectedQuote, roundScore) => {
 
 
 const getRoundsForGame = async (gameId) => {
-    const response = await fetch(SERVER_URL + `/api/games/${gameId}/rounds`,{
+    const response = await fetch(SERVER_URL + `/api/games/${gameId}/rounds`, {
         credentials: 'include',
     });
     if (response.ok) {
@@ -131,21 +81,21 @@ const getRoundsForGame = async (gameId) => {
 };
 
 const getAllGamesForUser = async (userId) => {
-const response = await fetch(SERVER_URL + `/api/users/${userId}/games`,{
-    credentials: 'include',
-});
+    const response = await fetch(SERVER_URL + `/api/users/${userId}/games`, {
+        credentials: 'include',
+    });
     if (response.ok) {
-      const games = await response.json();
-      return games;
+        const games = await response.json();
+        return games;
     } else {
-      const errDetails = await response.text();
-      throw errDetails;
+        const errDetails = await response.text();
+        throw errDetails;
     }
-  };
+};
 
 // authentication related
-const login = async(credentials)=>{
-    const response = await fetch(SERVER_URL + '/api/sessions',{
+const login = async (credentials) => {
+    const response = await fetch(SERVER_URL + '/api/sessions', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -153,10 +103,10 @@ const login = async(credentials)=>{
         body: JSON.stringify(credentials),
         credentials: 'include'
     });
-    if(response.ok){
+    if (response.ok) {
         const user = await response.json();
         return user;
-    } else{
+    } else {
         const errDetails = await response.text();
         throw errDetails;
     }
@@ -165,15 +115,15 @@ const login = async(credentials)=>{
 
 const getUserInfo = async () => {
     const response = await fetch(SERVER_URL + '/api/sessions/current', {
-      credentials: 'include',
+        credentials: 'include',
     });
     const user = await response.json();
     if (response.ok) {
-      return user;
+        return user;
     } else {
-      throw user;  // an object with the error coming from the server
+        throw user;  // an object with the error coming from the server
     }
-  };
+};
 
 
 // Combined function to create a game, fetch a random meme, and create a round
@@ -183,7 +133,7 @@ const createGameWithRound = async (userId, excludeIds = []) => {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({userId}),
         credentials: 'include',
     });
     if (response.ok) {
@@ -194,26 +144,22 @@ const createGameWithRound = async (userId, excludeIds = []) => {
         throw errDetails;
     }
 };
-  
 
-  
-  const logOut = async() => {
+
+const logOut = async () => {
     const response = await fetch(SERVER_URL + '/api/sessions/current', {
-      method: 'DELETE',
-      credentials: 'include'
+        method: 'DELETE',
+        credentials: 'include'
     });
     if (response.ok)
-      return null;
-  }
+        return null;
+}
 
-  export default {
+export default {
     login,
     getUserInfo,
     logOut,
-    getRandomMeme,
-    checkCaption,
     getBestCaption,
-    createGame,
     completeGame,
     completeRound,
     getRoundsForGame,

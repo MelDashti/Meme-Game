@@ -79,18 +79,10 @@ app.post('/api/sessions', function (req, res, next) {
     })(req, res, next);
 });
 
-// test if session is being stored
-app.get('/api/test-session', (req, res) => {
-    if (req.isAuthenticated()) {
-        res.json({session: req.session});
-        console.log('Session:', req.session);
-    } else {
-        res.status(401).json({error: 'Not authenticated'});
-    }
-});
 
 
 // This is the logout
+// user should be logged in to logout
 app.delete('/api/sessions/current', isLoggedIn, (req, res) => {
     req.logout(() => {
         res.end();
@@ -167,21 +159,10 @@ app.post('/api/newgame', async (req, res) => {
             rounds: roundIds
         });
     } catch (err) {
-        console.error('Error occurred while fetching the meme:', err.message);
         res.status(500).json({error: err.message});
     }
 });
 
-// Endpoint to check the selected caption
-app.post('/api/check-caption', async (req, res) => {
-    const {memeId, captionId} = req.body;
-    try {
-        const isBestMatch = await memeDao.checkCaption(memeId, captionId);
-        res.json({isBestMatch});
-    } catch (err) {
-        res.status(500).json({error: 'An error occurred while checking the caption.'});
-    }
-});
 
 // endpoint to get the best caption
 app.get('/api/best-caption', async (req, res) => {
@@ -194,18 +175,6 @@ app.get('/api/best-caption', async (req, res) => {
     }
 });
 
-
-// Endpoint for creating a new game
-app.post('/api/games', async (req, res) => {
-    const {userId} = req.body;
-    try {
-        console.log(userId);
-        const gameId = await memeDao.createGame(userId || null); // we pass null if the user is not logged in (for anonymouse user)
-        res.json({gameId});
-    } catch (err) {
-        res.status(500).json({error: 'An error occurred while creating a game.'});
-    }
-})
 
 // Endpoint to complete a game
 app.post('/api/games/:id/complete', async (req, res) => {
@@ -220,32 +189,28 @@ app.post('/api/games/:id/complete', async (req, res) => {
 })
 
 
-// Endpoint for deleting a game with all its rounds
+
 // Endpoint for deleting a game with all its rounds
 app.delete('/api/games/:gameId', async (req, res) => {
-    const { gameId } = req.params;
-    console.log(`Received request to delete game with ID: ${gameId}`); // Debugging line
+    const {gameId} = req.params;
     try {
         await memeDao.deleteGameAndRounds(gameId);
-        console.log(`Successfully deleted game with ID: ${gameId}`); // Debugging line
-        res.status(200).json({ message: 'Game and associated rounds deleted successfully' });
+        res.status(200).json({message: 'Game and associated rounds deleted successfully'});
     } catch (err) {
-        console.error(`Error occurred while deleting game with ID: ${gameId}`, err.message); // Debugging line
-        res.status(500).json({ error: 'An error occurred while deleting the game.' });
+        res.status(500).json({error: 'An error occurred while deleting the game.'});
     }
 });
 
 
 // Endpoint to complete a round
 app.post('/api/rounds/:roundId/complete', async (req, res) => {
-    const { roundId } = req.params;
-    const { selectedQuote, roundScore } = req.body;
+    const {roundId} = req.params;
+    const {selectedQuote, roundScore} = req.body;
     try {
         await memeDao.completeRound(roundId, selectedQuote, roundScore);
-        res.json({ message: 'Round completed successfully' });
+        res.json({message: 'Round completed successfully'});
     } catch (err) {
-        console.error('Error completing round:', err.message);
-        res.status(500).json({ error: 'An error occurred while completing the round.' });
+        res.status(500).json({error: 'An error occurred while completing the round.'});
     }
 });
 
@@ -257,7 +222,6 @@ app.get('/api/games/:gameId/rounds', async (req, res) => {
         const rounds = await memeDao.getRoundsForGame(gameId);
         res.json(rounds);
     } catch (err) {
-        console.error('Error fetching rounds for game:', err.message);
         res.status(500).json({error: 'An error occurred while fetching rounds for the game.'});
     }
 });

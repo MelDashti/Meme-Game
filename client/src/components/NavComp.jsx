@@ -1,8 +1,8 @@
-import { Container, Nav, Navbar } from "react-bootstrap";
-import { PersonCircle } from 'react-bootstrap-icons';
-import { useNavigate } from "react-router-dom";
+import {Container, Nav, Navbar} from "react-bootstrap";
+import {PersonCircle} from 'react-bootstrap-icons';
+import {useNavigate} from "react-router-dom";
 
-function NavComp({ loggedIn, handleLogout }) {
+function NavComp({loggedIn, handleLogout}) {
     const navigate = useNavigate();
 
     return (
@@ -18,16 +18,16 @@ function NavComp({ loggedIn, handleLogout }) {
                 >
                     Meme Game
                 </Navbar.Brand>
-                <Navbar.Toggle aria-controls="basic-navbar-nav" />
+                <Navbar.Toggle aria-controls="basic-navbar-nav"/>
                 <Navbar.Collapse id="basic-navbar-nav">
                     <Nav className="ms-auto">
                         {loggedIn ? (
                             <Nav.Link onClick={handleLogout} className="d-flex align-items-center text-white">
-                                <PersonCircle className="me-2" /> Logout
+                                <PersonCircle className="me-2"/> Logout
                             </Nav.Link>
                         ) : (
                             <Nav.Link href="/login" className="d-flex align-items-center text-white">
-                                <PersonCircle className="me-2" /> Login
+                                <PersonCircle className="me-2"/> Login
                             </Nav.Link>
                         )}
                     </Nav>

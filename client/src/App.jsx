@@ -1,11 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import {Container} from 'react-bootstrap';
-import {Routes, Route, Navigate} from 'react-router-dom';
-import Profile from './components/Profile.jsx';
+import {Route, Routes} from 'react-router-dom';
 import Game from './components/Game.jsx';
 import NavComp from './components/NavComp.jsx';
 import NewGame from './components/NewGame.jsx';
-import {LoginComp, LogoutButton} from './components/LoginComp.jsx';
+import {LoginComp} from './components/LoginComp.jsx';
 import API from './API.mjs';
 
 function App() {
@@ -46,7 +45,6 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Game userId={user?.id} setNewGameData={setNewGameData}/>}/>
                     <Route path='/newgame' element={<NewGame loggedIn={loggedIn} newGameData={newGameData}/>}/>
-                    <Route path="/profile" element={<Profile/>}/>
                     <Route path='/login' element={
                         <LoginComp loggedInSuccess={loggedInSuccess}/>
                     }/>

@@ -1,8 +1,8 @@
 class Caption {
     constructor(id, text) {
-      this.id = id;
-      this.text = text;
+        this.id = id;
+        this.text = text;
     }
-  }
-  
-  export default Caption;
+}
+
+export default Caption;

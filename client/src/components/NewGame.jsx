@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Alert, Button, Card, Col, Container, Modal, Row} from 'react-bootstrap';
 import {useNavigate} from 'react-router-dom'; // Import useNavigate
 import Score from './Score'; // Import the Score component
@@ -12,7 +12,7 @@ export default function NewGame({loggedIn, newGameData}) {
     const [totalRound, setTotalRound] = useState(loggedIn ? 3 : 1);
     const [correctAnswers, setCorrectAnswers] = useState([]);
     const [selectedQuote, setSelectedQuote] = useState(null);
-    const [timeLeft, setTimeLeft] = useState(6);
+    const [timeLeft, setTimeLeft] = useState(30);
     const [showScore, setShowScore] = useState(false);
     const [totalScore, setTotalScore] = useState(0);
     const [showModal, setShowModal] = useState(false);
@@ -101,22 +101,16 @@ export default function NewGame({loggedIn, newGameData}) {
 
     // Function to handle exit game
     const handleExitGame = async () => {
-        console.log("handleExitGame triggered"); // Debugging line
-    
         try {
             if (gameId && (!loggedIn || !gameFinished)) {
-                console.log("Deleting game with ID:", gameId); // Debugging line
                 await API.deleteGame(gameId);
-                console.log("Game deleted successfully"); // Debugging line
             }
         } catch (error) {
             console.log("Error in handleExitGame:", error); // Debugging line
         } finally {
             if (timerId) {
                 clearInterval(timerId); // Clear the timer
-                console.log("Timer cleared"); // Debugging line
             }
-            console.log("Navigating to home page"); // Debugging line
             navigate('/'); // Navigate to the home page
         }
     };

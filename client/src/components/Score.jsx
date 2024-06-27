@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Container, Row, Col, Alert } from 'react-bootstrap';
+import React, {useEffect, useState} from 'react';
+import {Card, Col, Container, Row} from 'react-bootstrap';
 import API from '../API'; // Adjust the import path as necessary
 
-export default function Score({ gameId }) {
+export default function Score({gameId}) {
     const [score, setScore] = useState(0);
     const [rounds, setRounds] = useState([]);
     const [summary, setSummary] = useState([]);
@@ -10,8 +10,6 @@ export default function Score({ gameId }) {
     useEffect(() => {
         const fetchRounds = async () => {
             try {
-                console.log("fetching rounds")
-                console.log(gameId)
                 const roundsData = await API.getRoundsForGame(gameId);
                 setRounds(roundsData);
                 const totalScore = roundsData.reduce((acc, round) => acc + round.score, 0);
@@ -27,14 +25,15 @@ export default function Score({ gameId }) {
 
     return (
         <Container className="d-flex flex-column align-items-center mt-5">
-            <Card className="w-100 mb-3" style={{ maxWidth: '800px' }}>
+            <Card className="w-100 mb-3" style={{maxWidth: '800px'}}>
                 <Card.Body className="text-center">
-                <h2>Your Total Score: {score}</h2>
+                    <h2>Your Total Score: {score}</h2>
                     <Row className="g-4">
                         {summary.map((round, index) => (
                             <Col xs={12} md={6} key={index}>
                                 <Card>
-                                    <Card.Img variant="top" src={round.memeUrl} alt="Meme" style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
+                                    <Card.Img variant="top" src={round.memeUrl} alt="Meme"
+                                              style={{width: '100%', height: 'auto', objectFit: 'contain'}}/>
                                     <Card.Body>
                                         <Card.Title>Selected Caption</Card.Title>
                                         <Card.Text>{round.selectedCaption}</Card.Text>
