@@ -1,10 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import {Alert, Button, Card, Col, Container, Modal, Row} from 'react-bootstrap';
-import {useNavigate} from 'react-router-dom'; 
-import Score from './Score'; 
+import {useNavigate} from 'react-router-dom';
+import Score from './Score';
 import API from '../API.mjs';
 
-export default function NewGame({loggedIn, newGameData}) {
+export default function NewGame({loggedIn, newGameData, createNewGame}) {
 
     const [imgUrl, setImgUrl] = useState('');
     const [quotes, setQuotes] = useState([]);
@@ -22,18 +22,23 @@ export default function NewGame({loggedIn, newGameData}) {
     const [gameFinished, setGameFinished] = useState(false);
     const [timerId, setTimerId] = useState(null);
     const [roundId, setRoundId] = useState(null);
+    const [gameVersion, setGameVersion] = useState(0);
 
-    const navigate = useNavigate(); 
+    const navigate = useNavigate();
 
     useEffect(() => {
-        startNewRound();
-    }, [currentRound]); // Every time round is changed, startNewRound is called
+        startNewRound()
+    }, [currentRound, gameVersion]); // Every time round is changed, startNewRound is called
 
     // Function to start a new round
     const startNewRound = async () => {
+        if (timerId) {
+            clearInterval(timerId);
+            setTimerId(null);
+        }
+        setTimeLeft(30);
         setSelectedQuote(null);
         setCorrectAnswers([]);
-        setTimeLeft(30);
         setMessage('');
         const roundData = newGameData.rounds[currentRound - 1]; // he we adjust index for 0-based array
         setRoundId(roundData.roundId);
@@ -44,16 +49,21 @@ export default function NewGame({loggedIn, newGameData}) {
     };
 
     useEffect(() => {
+        let intervalId;
         if (timeLeft > 0) {
-            const timerId = setInterval(() => {
+            intervalId = setInterval(() => {
                 setTimeLeft((prevTime) => prevTime - 1);
             }, 1000);
-            setTimerId(timerId);
-            return () => clearInterval(timerId);
+            setTimerId(intervalId); // Set timerId to the local intervalId
         } else if (timeLeft === 0) {
-            handleRoundEnd(selectedQuote); // Pass selectedQuote to handleRoundEnd
+            handleRoundEnd(selectedQuote);
         }
-    }, [timeLeft]);
+
+        return () => {
+            clearInterval(intervalId); // Clear interval on cleanup
+        };
+    }, [timeLeft, selectedQuote]);
+
 
     // function to handle the end of the round
     const handleRoundEnd = async (selectedQuote) => {
@@ -97,9 +107,12 @@ export default function NewGame({loggedIn, newGameData}) {
 
     // Function to handle caption selection
     const handleSelect = (quote) => {
+        if (timerId) {
+            clearInterval(timerId); // clear existing timer
+            setTimerId(null); // reset timerID state
+        }
         setSelectedQuote(quote);
-        clearInterval(timerId); 
-        handleRoundEnd(quote); 
+        handleRoundEnd(quote);
     };
 
     // Function to handle exit game
@@ -109,17 +122,17 @@ export default function NewGame({loggedIn, newGameData}) {
                 await API.deleteGame(gameId);
             }
         } catch (error) {
-            console.log("Error in handleExitGame:", error); 
+            console.log("Error in handleExitGame:", error);
         } finally {
             if (timerId) {
-                clearInterval(timerId); 
+                clearInterval(timerId);
             }
-            navigate('/'); 
+            navigate('/');
         }
     };
 
     // function to handle modal close
-    const handleCloseModal = () => {
+    const handleCloseModal = async () => {
         setShowModal(false); // Close the modal
         if (currentRound < totalRound) {
             setCurrentRound((prevRound) => prevRound + 1);
@@ -129,10 +142,44 @@ export default function NewGame({loggedIn, newGameData}) {
         }
     };
 
+// ... existing code ...
+
+    const resetGame = async () => {
+        if (timerId) {
+            clearInterval(timerId);
+        }
+
+        setTimerId(null);
+        setShowScore(false);
+        setGameFinished(false);
+        setSelectedQuote(null);
+        setTimeLeft(30);
+        setTotalRound(loggedIn ? 3 : 1);
+        setTotalScore(0);
+        setQuotes([]);
+        setCorrectAnswers([]);
+        setImgUrl('');
+        setMessage('');
+        setShowModal(false);
+        setRoundId(null);
+        setGameId(null);
+        setMemeId(null);
+
+        if (!loggedIn) {
+            await API.deleteGame(gameId);
+        }
+        // Create a new game
+        await createNewGame(); // Ensure this function fetches new game data
+        setCurrentRound(1);
+        // Increment gameVersion to force reinitialization
+        setGameVersion(prevVersion => prevVersion + 1);
+    };
+
+
     return (
         <Container className="d-flex flex-column align-items-center mt-3">
             {showScore ? (
-                <Score gameId={gameId}/>
+                <Score gameId={gameId} createNewGame={resetGame}/>
             ) : (
                 <>
                     <Card className="w-100 mb-3" style={{maxWidth: '800px', position: 'relative'}}>

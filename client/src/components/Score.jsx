@@ -3,7 +3,7 @@ import {Button, Card, Col, Container, Row} from 'react-bootstrap';
 import API from '../API'; // Adjust the import path as necessary
 import { useNavigate } from 'react-router-dom';
 
-export default function Score({gameId}) {
+export default function Score({gameId, createNewGame}) {
     const [score, setScore] = useState(0);
     const [summary, setSummary] = useState([]);
     const navigate = useNavigate();
@@ -25,9 +25,14 @@ export default function Score({gameId}) {
     }, [gameId]);
 
 
+    const handlePlayAgain = () => {
+        createNewGame();
+    };
+
+
     return (
         <Container className="d-flex flex-column align-items-center mt-5">
-            <Card className="w-100 mb-3" style={{maxWidth: '800px'}}>
+            <Card className="w-100 mb-3" style={{ maxWidth: '800px' }}>
                 <Card.Body className="text-center">
                     <h2>Your Total Score: {score}</h2>
                     <Row className="g-4">
@@ -35,7 +40,7 @@ export default function Score({gameId}) {
                             <Col xs={12} md={6} key={index}>
                                 <Card>
                                     <Card.Img variant="top" src={round.memeUrl} alt="Meme"
-                                              style={{width: '100%', height: 'auto', objectFit: 'contain'}}/>
+                                              style={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
                                     <Card.Body>
                                         <Card.Title>Selected Caption</Card.Title>
                                         <Card.Text>{round.selectedCaption}</Card.Text>
@@ -46,6 +51,9 @@ export default function Score({gameId}) {
                         ))}
                     </Row>
                 </Card.Body>
+                <Card.Footer className="text-center">
+                    <Button variant="success" onClick={handlePlayAgain}>Play Again</Button>
+                </Card.Footer>
             </Card>
         </Container>
     );

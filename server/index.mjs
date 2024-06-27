@@ -80,7 +80,6 @@ app.post('/api/sessions', function (req, res, next) {
 });
 
 
-
 // This is the logout
 // user should be logged in to logout
 app.delete('/api/sessions/current', isLoggedIn, (req, res) => {
@@ -95,7 +94,6 @@ app.get('/api/sessions/current', isLoggedIn, (req, res) => {
 });
 
 
-
 // endpoint to create a new game
 app.post('/api/newgame', async (req, res) => {
     const {userId} = req.body;
@@ -104,8 +102,9 @@ app.post('/api/newgame', async (req, res) => {
     try {
         const rounds = [];
         const usedMemeIds = new Set(excludeIdsArray);
+        const numberOfRounds = userId ? 3 : 1;
 
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < numberOfRounds; i++) {
             const result = await memeDao.getRandomMeme(Array.from(usedMemeIds));
             if (!result) {
                 throw new Error('No meme found');

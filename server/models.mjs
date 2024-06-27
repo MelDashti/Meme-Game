@@ -13,11 +13,11 @@ class Meme {
 }
 
 class Round {
-    constructor(id, gameId, memeId, selectedCaptionId, score, memeUrl) {
+    constructor(id, gameId, memeId, selectedCaption, score, memeUrl) {
         this.id = id;
         this.gameId = gameId;
         this.memeId = memeId;
-        this.selectedCaptionId = selectedCaptionId;
+        this.selectedCaption = selectedCaption;
         this.score = score;
         this.memeUrl = memeUrl; 
     }

@@ -1,5 +1,5 @@
 import db from './db.mjs';
-import {Meme, Caption, Round, Game} from './models.mjs'
+import {Caption, Game, Meme, Round} from './models.mjs'
 import dayjs from 'dayjs';
 
 

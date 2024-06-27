@@ -1,12 +1,10 @@
 import React, {useEffect, useState} from "react";
-import {useNavigate} from "react-router-dom";
 import {Button, Card, Col, Container, Row} from "react-bootstrap";
 import API from '../API.mjs';
 
 export default function Game(props) {
-    const {userId, setNewGameData} = props;
+    const {userId, createNewGame} = props;
     const [games, setGames] = useState([]);
-    const navigate = useNavigate();
     useEffect(() => {
         const fetchGameSummary = async () => {
             try {
@@ -25,27 +23,6 @@ export default function Game(props) {
             fetchGameSummary();
         }
     }, [userId]);
-
-// function for creating a new game.
-    const createNewGame = async () => {
-        try {
-            const {gameId, rounds} = await API.createGameWithRound(userId || null);
-            const newGameData = {
-                gameId,
-                rounds: rounds.map(round => ({
-                    roundId: round.roundId,
-                    memeUrl: round.meme.url,
-                    memeId: round.meme.id,
-                    captions: round.captions,
-                })),
-            };
-            setNewGameData(newGameData);
-            navigate("/newgame");
-        } catch (error) {
-            console.error("Error in createNewGame:", error);
-        }
-    }
-
 
     return (
         <Container className="mt-5">
@@ -81,7 +58,8 @@ export default function Game(props) {
                                                     <Card.Title
                                                         className="text-secondary">Round {roundIndex + 1}</Card.Title>
                                                     <Card.Text><strong>Selected
-                                                        Caption:</strong> {round.selectedCaption || 'None selected'}</Card.Text>
+                                                        Caption:</strong> {round.selectedCaption ? round.selectedCaption : 'None selected'}
+                                                    </Card.Text>
                                                     <Card.Text><strong>Points:</strong> {round.score}</Card.Text>
                                                 </Card.Body>
                                             </Card>
