@@ -3,7 +3,7 @@
 
 ## React Client Application Routes
 
-- Route `/`: Displays the home page where users can start a new game or view their game summaries.
+- Route `/`: Displays the home page(`Game` component) where users can start a new game or view their game summaries.
 - Route `/newgame`: Displays the `NewGame` component where users can play a new game.
 - Route `/login`: Displays the `LoginComp` component where users can log in.
 
@@ -23,7 +23,7 @@
     - Displays memes and allows users to select captions.
     - Manages game rounds, including timing and scoring.
     - Shows a modal with the result of each round.
-    - Displays the final score at the end of the game.
+    - Displays the final score at the end of the game and allows users to restart the game.
     - Allows users to exit the game and navigate back to the home page.
 
 
@@ -48,19 +48,12 @@
     - `200 OK`: User is logged in.
     - `401 Unauthorized`: User is not logged in.
 
-- POST `/api/newgame`: Creates a new game with rounds.
+- POST `/api/newgame`: Creates a new game with rounds and fetches random memes.
   - **Request Body**: `{ userId }`
   - **Query Parameters**: `excludeIds` (optional, comma-separated list of meme IDs to exclude)
   - **Response Body**: `{ gameId, rounds }`
   - **Response Status Codes**: 
     - `200 OK`: Game created successfully.
-    - `500 Internal Server Error`: An error occurred.
-
-- POST `/api/games`: Creates a new game.
-  - **Request Body**: `{ userId }`
-  - **Response Body**: `{ gameId }`
-  - **Response Status Codes**: 
-  - `200 OK`: Game created successfully.
     - `500 Internal Server Error`: An error occurred.
 
 - POST `/api/games/:id/complete`: Completes a game and updates the total score.
@@ -92,18 +85,12 @@
   - **Response Status Codes**: 
     - `200 OK`: Rounds fetched successfully.
     - `500 Internal Server Error`: An error occurred.
+      
 - GET `/api/users/:userId/games`: Gets all games for a specific user.
   - **Request Parameters**: `userId`
   - **Response Body**: Array of games.
   - **Response Status Codes**: 
     - `200 OK`: Games fetched successfully.
-    - `500 Internal Server Error`: An error occurred.
-
-- POST `/api/check-caption`: Checks if a selected caption is the best match for a meme.
-  - **Request Body**: `{ memeId, captionId }`
-  - **Response Body**: `{ isBestMatch }`
-  - **Response Status Codes**: 
-    - `200 OK`: Caption checked successfully.
     - `500 Internal Server Error`: An error occurred.
 
 - GET `/api/best-caption`: Gets the best captions for a meme.
@@ -125,9 +112,9 @@
 
 ## Screenshots
 
-![Screenshot1](./img/screenshot1.png)
+![Screenshot1](./img/Screenshot1.png)
 
-![Screenshot2](./img/screenshot2.png)
+![Screenshot2](./img/Screenshot2.png)
 
 
 ## Users Credentials
