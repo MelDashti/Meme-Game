@@ -18,7 +18,7 @@ function LoginComp(props) {
                 navigate("/");
             })
             .catch(error => {
-                setErrorMessage(error.message);
+                setErrorMessage("Invalid username or password");
             });
     };
 

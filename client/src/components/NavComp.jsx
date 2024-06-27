@@ -5,6 +5,11 @@ import {useNavigate} from "react-router-dom";
 function NavComp({loggedIn, handleLogout}) {
     const navigate = useNavigate();
 
+    const handleLoginClick = (event) => {
+        event.preventDefault(); // Prevent default anchor tag behavior
+        navigate("/login");
+    };
+
     return (
         <Navbar expand="lg" bg="dark" variant="dark" className="py-3">
             <Container>
@@ -26,7 +31,7 @@ function NavComp({loggedIn, handleLogout}) {
                                 <PersonCircle className="me-2"/> Logout
                             </Nav.Link>
                         ) : (
-                            <Nav.Link href="/login" className="d-flex align-items-center text-white">
+                            <Nav.Link onClick={handleLoginClick} className="d-flex align-items-center text-white">
                                 <PersonCircle className="me-2"/> Login
                             </Nav.Link>
                         )}

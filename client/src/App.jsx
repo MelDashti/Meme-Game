@@ -30,6 +30,7 @@ function App() {
         await API.logOut();
         setLoggedIn(false);
         setUser(null);
+        navigate("/");
     };
 
     const loggedInSuccess = (user) => {
