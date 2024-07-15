@@ -1,127 +1,270 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Button, Container, Row, Col, Alert } from 'react-bootstrap';
-import Score from './Score'; // Import the Score component
+import React, {useEffect, useState} from 'react';
+import {Alert, Button, Card, Col, Container, Modal, Row} from 'react-bootstrap';
+import {useNavigate} from 'react-router-dom';
+import Score from './Score';
+import API from '../API.mjs';
 
-export default function NewGame() {
-    const quotes = [
-        "When someone explains something to you and you still don't get it.",
-        "When you hear someone say something completely ridiculous.",
-        "When you realize you’ve been doing something wrong your whole life.",
-        "When you see the price of something you thought was on sale.",
-        "When someone says they don’t like pizza.",
-        "When you walk into a room and forget why you went in there.",
-        "When you hear a conspiracy theory that actually makes sense."
-    ];
+export default function NewGame({loggedIn, newGameData, createNewGame}) {
 
-    const images = [
-        "/images/meme1.jpg",
-        "/images/meme2.jpg",
-        "/images/meme3.jpg",
-        "/images/meme4.jpg",
-        "/images/meme5.jpg",
-        "/images/meme6.jpg",
-        "/images/meme7.jpg",
-        "/images/meme8.jpg",
-        "/images/meme9.jpg"
-    ];
-
-    const correctAnswers = [
-        "When someone explains something to you and you still don't get it.",
-        "When you hear someone say something completely ridiculous."
-    ];
-
-    const [imgUrl, setImgUrl] = useState(images[0]);
-    const [isLogged, setIsLogged] = useState(true);
-    const [round, setRound] = useState(isLogged ? 1 : 3);
+    const [imgUrl, setImgUrl] = useState('');
+    const [quotes, setQuotes] = useState([]);
+    const [currentRound, setCurrentRound] = useState(1);
+    const [totalRound, setTotalRound] = useState(loggedIn ? 3 : 1);
+    const [correctAnswers, setCorrectAnswers] = useState([]);
     const [selectedQuote, setSelectedQuote] = useState(null);
     const [timeLeft, setTimeLeft] = useState(30);
     const [showScore, setShowScore] = useState(false);
-    const [score, setScore] = useState(0);
+    const [totalScore, setTotalScore] = useState(0);
+    const [showModal, setShowModal] = useState(false);
     const [message, setMessage] = useState('');
+    const [gameId, setGameId] = useState(null);
+    const [memeId, setMemeId] = useState(null);
+    const [gameFinished, setGameFinished] = useState(false);
+    const [timerId, setTimerId] = useState(null);
+    const [roundId, setRoundId] = useState(null);
+    const [gameVersion, setGameVersion] = useState(0);
+
+    const navigate = useNavigate();
 
     useEffect(() => {
-        if (timeLeft > 0) {
-            const timerId = setInterval(() => {
-                setTimeLeft(timeLeft - 1);
-            }, 1000);
-            return () => clearInterval(timerId);
-        } else {
-            if (round < 3) {
-                if (correctAnswers.includes(selectedQuote)) {
-                    setScore(score + 5);
-                    setMessage(`Round ${round} finished! 5 points added to your score.`);
-                } else {
-                    setMessage(`Round ${round} finished! Incorrect answer. The correct answers were: ${correctAnswers.join(' and ')}`);
-                }
-                setTimeout(() => {
-                    setRound(round + 1);
-                    setTimeLeft(30);
-                    setImgUrl(images[round]);
-                    setSelectedQuote(null);
-                    setMessage('');
-                }, 3000); // Show the message for 3 seconds before moving to the next round
-            } else {
-                setShowScore(true);
-            }
-        }
-    }, [timeLeft, round, images, correctAnswers, selectedQuote, score]);
+        startNewRound()
+    }, [currentRound, gameVersion]); // Every time round is changed, startNewRound is called
 
-    const handleSelect = (quote) => {
-        setSelectedQuote(quote);
+    // Function to start a new round
+    const startNewRound = async () => {
+        if (timerId) {
+            clearInterval(timerId);
+            setTimerId(null);
+        }
+        setTimeLeft(30);
+        setSelectedQuote(null);
+        setCorrectAnswers([]);
+        setMessage('');
+        const roundData = newGameData.rounds[currentRound - 1]; // he we adjust index for 0-based array
+        setRoundId(roundData.roundId);
+        setGameId(newGameData.gameId);
+        setImgUrl(roundData.memeUrl);
+        setQuotes(roundData.captions.map(caption => caption.text)); // Directly set the captions
+        setMemeId(roundData.memeId);
     };
 
+    useEffect(() => {
+        let intervalId;
+        if (timeLeft > 0) {
+            intervalId = setInterval(() => {
+                setTimeLeft((prevTime) => prevTime - 1);
+            }, 1000);
+            setTimerId(intervalId); // Set timerId to the local intervalId
+        } else if (timeLeft === 0) {
+            handleRoundEnd(selectedQuote);
+        }
+
+        return () => {
+            clearInterval(intervalId); // Clear interval on cleanup
+        };
+    }, [timeLeft, selectedQuote]);
+
+
+    // function to handle the end of the round
+    const handleRoundEnd = async (selectedQuote) => {
+        let roundScore = 0;
+        try {
+            const bestCaptionResponse = await API.getBestCaption(memeId);
+            const bestCaptions = bestCaptionResponse.bestCaption.map((caption) => caption.text);
+            setCorrectAnswers(bestCaptions);
+            if (bestCaptions.includes(selectedQuote)) {
+                setTotalScore((prevScore) => prevScore + 5);
+                roundScore = 5;
+                setMessage(`Round ${currentRound} finished!`);
+            } else {
+                setMessage(`Round ${currentRound} finished! Incorrect answer. The correct answers were: ${bestCaptions.join(' and ')}`);
+            }
+            setShowModal(true); // Show the modal when message is set
+            await completeRound(roundScore, selectedQuote); // Pass selectedQuote to createRound
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+// function for completing the game by sending the gameId and totalScore to the API. Game row is updated.
+    const completeGame = async () => {
+        try {
+            await API.completeGame(gameId, totalScore);
+            setShowScore(true);
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+//  function for completing the round by sending the roundId, selectedQuote, and roundScore to the API. Round row is updated.
+    const completeRound = async (roundScore, selectedQuote) => {
+        try {
+            await API.completeRound(roundId, selectedQuote, roundScore);
+        } catch (error) {
+            console.log("Error in completeRound:", error);
+        }
+    };
+
+    // Function to handle caption selection
+    const handleSelect = (quote) => {
+        if (timerId) {
+            clearInterval(timerId); // clear existing timer
+            setTimerId(null); // reset timerID state
+        }
+        setSelectedQuote(quote);
+        handleRoundEnd(quote);
+    };
+
+    // Function to handle exit game
+    const handleExitGame = async () => {
+        try {
+            if (gameId && (!loggedIn || !gameFinished)) {
+                await API.deleteGame(gameId);
+            }
+        } catch (error) {
+            console.log("Error in handleExitGame:", error);
+        } finally {
+            if (timerId) {
+                clearInterval(timerId);
+            }
+            navigate('/');
+        }
+    };
+
+    // function to handle modal close
+    const handleCloseModal = async () => {
+        setShowModal(false); // Close the modal
+        if (currentRound < totalRound) {
+            setCurrentRound((prevRound) => prevRound + 1);
+        } else {
+            completeGame();
+            setGameFinished(true);
+        }
+    };
+
+// ... existing code ...
+
+    const resetGame = async () => {
+        if (timerId) {
+            clearInterval(timerId);
+        }
+
+        setTimerId(null);
+        setShowScore(false);
+        setGameFinished(false);
+        setSelectedQuote(null);
+        setTimeLeft(30);
+        setTotalRound(loggedIn ? 3 : 1);
+        setTotalScore(0);
+        setQuotes([]);
+        setCorrectAnswers([]);
+        setImgUrl('');
+        setMessage('');
+        setShowModal(false);
+        setRoundId(null);
+        setGameId(null);
+        setMemeId(null);
+
+        if (!loggedIn) {
+            await API.deleteGame(gameId);
+        }
+        // Create a new game
+        await createNewGame(); // Ensure this function fetches new game data
+        setCurrentRound(1);
+        // Increment gameVersion to force reinitialization
+        setGameVersion(prevVersion => prevVersion + 1);
+    };
+
+
     return (
-        <Container className="d-flex flex-column align-items-center mt-5">
+        <Container className="d-flex flex-column align-items-center mt-3">
             {showScore ? (
-                <Score score = {score} correctAnswers={correctAnswers} selectedQuote={selectedQuote} />
+                <Score gameId={gameId} createNewGame={resetGame}/>
             ) : (
-                <Card className="w-100 mb-3" style={{ maxWidth: '800px', position: 'relative' }}>
-                    <div style={{
-                        position: 'absolute',
-                        top: '10px',
-                        left: '10px',
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        color: 'white',
-                        padding: '5px 10px',
-                        borderRadius: '5px'
-                    }}>
-                        Round {round}
-                    </div>
-                    <div style={{
-                        position: 'absolute',
-                        top: '10px',
-                        right: '10px',
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        color: 'white',
-                        padding: '5px 10px',
-                        borderRadius: '5px'
-                    }}>
-                        {timeLeft} seconds left
-                    </div>
-                    <Card.Img variant="top" src={imgUrl} className="d-block mx-auto" style={{ maxWidth: '400px' }} />
-                    <Card.Body className="text-center">
-                        <p>Guess the caption that best fits the meme</p>
-                        <Row>
-                            {quotes.map((quote, index) => (
-                                <Col xs={12} md={6} className="mb-2" key={index}>
-                                    <Button
-                                        variant="outline-secondary"
-                                        className={`w-100 ${selectedQuote === quote ? 'active' : ''}`}
-                                        onClick={() => handleSelect(quote)}
-                                    >
-                                        {quote}
-                                    </Button>
-                                </Col>
-                            ))}
-                        </Row>
-                        {message && (
-                            <Alert variant={correctAnswers.includes(selectedQuote) ? 'success' : 'danger'} className="mt-3">
-                                {message}
+                <>
+                    <Card className="w-100 mb-3" style={{maxWidth: '800px', position: 'relative'}}>
+                        <div style={{
+                            position: 'absolute',
+                            top: '10px',
+                            left: '10px',
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            color: 'white',
+                            padding: '5px 10px',
+                            borderRadius: '5px'
+                        }}>
+                            Round {currentRound}
+                        </div>
+                        <div style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            color: 'white',
+                            padding: '5px 10px',
+                            borderRadius: '5px'
+                        }}>
+                            {timeLeft} seconds left
+                        </div>
+                        <Card.Img variant="top" src={imgUrl} className="d-block mx-auto" style={{maxWidth: '400px'}}/>
+                        <Card.Body className="text-center">
+                            <p>Guess the caption that best fits the meme</p>
+                            <Row>
+                                {quotes.map((quote, index) => (
+                                    <Col xs={12} md={6} className="mb-2" key={index}>
+                                        <Button
+                                            variant="outline-secondary"
+                                            className={`w-100 ${selectedQuote === quote ? 'active' : ''}`}
+                                            onClick={() => handleSelect(quote)}
+                                        >
+                                            {quote}
+                                        </Button>
+                                    </Col>
+                                ))}
+                            </Row>
+                        </Card.Body>
+                    </Card>
+                    <Modal show={showModal} onHide={handleCloseModal}>
+                        <Modal.Header closeButton>
+                            <Modal.Title>Round Result</Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <Alert
+                                variant={correctAnswers.includes(selectedQuote) ? 'success' : 'danger'}
+                                className="text-center p-4 shadow rounded"
+                                style={{
+                                    background: correctAnswers.includes(selectedQuote) ? 'linear-gradient(135deg, #a8e063 0%, #56ab2f 100%)' : 'linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%)',
+                                    color: 'white',
+                                }}
+                            >
+                                <h4 style={{fontSize: '1.5rem', fontWeight: 'bold'}}>{message.split('.')[0]}</h4>
+                                <div style={{fontSize: '1.2rem', marginTop: '1rem'}}>
+                                    {correctAnswers.includes(selectedQuote) ? (
+                                        <span>5 points have been added to your score!</span>
+                                    ) : (
+                                        <>
+                                            <span>The correct answers were:</span>
+                                            <ul style={{textAlign: 'left', margin: '1rem 0', paddingLeft: '1.5rem'}}>
+                                                {correctAnswers.map((answer, index) => (
+                                                    <li key={index}>{answer}</li>
+                                                ))}
+                                            </ul>
+                                        </>
+                                    )}
+                                </div>
                             </Alert>
-                        )}
-                    </Card.Body>
-                </Card>
+                        </Modal.Body>
+                        <Modal.Footer>
+                            <Button variant="secondary" onClick={handleCloseModal}>
+                                Close
+                            </Button>
+                        </Modal.Footer>
+                    </Modal>
+                </>
             )}
+            <Button variant="danger" onClick={handleExitGame} className="mt-3 mb-5">
+                Exit Game
+            </Button>
         </Container>
     );
 }
+                           
